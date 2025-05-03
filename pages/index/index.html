@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="index.css">
+    <title id="title"></title>
+</head>
+
+<body>
+    <div class="container hidden" id="container">
+        <h1 id="caption">课程作业展示板</h1>
+        <h3 id="time"></h3>
+        <ol>
+
+        </ol>
+    </div>
+    <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-out">-</button>
+        <span id="zoom-level">100%</span>
+        <button class="zoom-btn" id="zoom-in">+</button>
+    </div>
+    <div id="status-bar">
+        <div class="status-left">
+            <div id="app-status" class="status-item">
+                <span id="message"></span>
+            </div>
+        </div>
+        <div class="status-right">
+            <div class="status-item">
+                <span>v1.0.0</span>
+            </div>
+            <div id="clock" class="status-item"></div>
+        </div>
+    </div>
+    <script src="render.js"></script>
+</body>
+
+</html>

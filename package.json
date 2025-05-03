@@ -1,0 +1,22 @@
+{
+  "name": "homeworkboard",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "app:dir": "electron-builder --dir",
+    "app:dist": "electron-builder"
+  },
+  "author": "dzx",
+  "license": "ISC",
+  "description": "homeworkboard",
+  "devDependencies": {
+    "electron": "^35.2.1",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1",
+    "electron-store": "^10.0.1",
+    "sqlite3": "^5.1.7"
+  },
+  "type": "module"
+}

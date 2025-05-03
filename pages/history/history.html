@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="history.css">
+    <title>历史记录</title>
+</head>
+<body>
+    <div class="history-container">
+        <div class="calendar-header">
+            <button id="prev-month">&lt;</button>
+            <h2 id="current-month"></h2>
+            <button id="next-month">&gt;</button>
+        </div>
+        <div class="calendar-grid" id="calendar"></div>
+        <div class="detail-container">
+            <h3 id="detail-date"></h3>
+            <pre id="detail-content"></pre>
+        </div>
+    </div>
+    <script src="render.js"></script>
+</body>
+</html>
