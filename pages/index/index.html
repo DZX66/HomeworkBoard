@@ -9,11 +9,19 @@
 
 <body>
     <div class="container hidden" id="container">
-        <h1 id="caption">课程作业展示板</h1>
-        <h3 id="time"></h3>
-        <ol>
-
-        </ol>
+        <div class="left-panel">
+            <div class="info-card">
+                <h1 id="caption">课程作业展示板</h1>
+            </div>
+            <div class="info-card">
+                <h3 id="time"></h3>
+            </div>
+        </div>
+        <div class="right-panel info-card">
+            <ol>
+                <!-- 作业列表将在这里动态生成 -->
+            </ol>
+        </div>
     </div>
     <div class="zoom-controls">
         <button class="zoom-btn" id="zoom-out">-</button>
@@ -28,10 +36,13 @@
         </div>
         <div class="status-right">
             <div class="status-item">
-                <span>v1.0.0</span>
+                <span>v1.1.0</span>
             </div>
             <div id="clock" class="status-item"></div>
         </div>
+    </div>
+    <div id="history-window">
+        <ul id="history-list"></ul>
     </div>
     <script src="render.js"></script>
 </body>

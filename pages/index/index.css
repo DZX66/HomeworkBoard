@@ -9,20 +9,41 @@ body {
     margin: 0;
     padding: 0.2rem;
     font-size: 18px;
-    background: #d3f6cf;
+    background: #baf4cc;
     user-select: none;
 }
 
 .container {
+    display: grid;
+    grid-template-columns: 1fr 4fr; /* 左1右4的比例 */
+    gap: 1rem;
     width: 100%;
-    max-width: 1000px;
-    background: white;
-    padding: 0rem 4rem;
-    border-radius: 8px;
-    box-shadow: 0 3px 8px 6px rgba(0, 0, 0, 0.2);
     transition: all 0.4s ease;
     opacity: 1;
     transform: translateY(0);
+}
+
+.left-panel {
+    position: sticky;
+    top: 2rem; /* 与容器内边距一致 */
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.info-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.right-panel {
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
 }
 
 .container.hidden {
@@ -31,22 +52,42 @@ body {
 }
 
 h1 {
-    text-align: center;
+    text-align: center; 
     color: #2c3e50;
-    margin: 0 0 0.2rem;
+    margin: 0;
     font-family: Arial, sans-serif;
-    font-size: 2.4em;
+    font-size: 1.8em; /* 稍微减小字号 */
     font-weight: 600;
 }
 
 h3 {
-    text-align: center;
+    text-align: center; 
     color: #2c3e50;
-    margin: 0 0 0.3rem;
+    margin: 0;
     font-family: Arial, sans-serif;
-    font-size: 1.6em;
+    font-size: 1.4em; /* 稍微减小字号 */
     font-weight: 450;
 }
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+    
+    .left-panel {
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .info-card {
+        flex: 1;
+        min-width: 200px;
+    }
+}
+
 
 ol {
     list-style: none;
@@ -65,7 +106,7 @@ ol {
     flex: 0 0 120px;
     font-weight: bold;
     color: #34495e;
-    font-size: 2.1em;
+    font-size: 2em;
 }
 
 .tasks-list {
@@ -78,12 +119,12 @@ textarea {
     box-sizing: border-box;
     width: 100%;
     padding: 0em;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0rem;
     border: 1px solid #bdc3c7;
     border-radius: 6px;
     resize: none;
     line-height: 1.2;
-    font-size: 2.7em;
+    font-size: 2.5em;
     font-family: Arial, sans-serif;
     overflow: hidden;
     transition: all 0.2s ease;
@@ -168,7 +209,7 @@ textarea:focus {
     border-radius: 50%;
     background: #fff;
     color: #333;
-    font-size: 20px;
+    font-size: 25px;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -239,7 +280,7 @@ textarea:focus {
     backdrop-filter: blur(2px);
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
 #edit-dialog.show {
@@ -255,7 +296,7 @@ textarea:focus {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transform: translateY(20px);
     opacity: 0;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #edit-dialog.show .dialog-content {
@@ -289,7 +330,7 @@ textarea:focus {
     border-radius: 4px;
     cursor: pointer;
     font-size: 1.4em;
-    transition: all 0.2s;
+    transition: all 0.1s;
 }
 
 #dialog-confirm {
@@ -316,4 +357,63 @@ textarea:focus {
 
 #dialog-reset:hover {
     background: #da190b;
+}
+
+/* 添加历史记录窗口样式 */
+#history-window {
+    position: fixed;
+    bottom: -5px; /* 在状态栏上方 */
+    left: 0;
+    right: 40%;
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(91, 111, 107, 0.9); /* 半透明背景 */
+    backdrop-filter: blur(5px);
+    color: white;
+    padding: 10px;
+    border-radius: 8px 8px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 1001; /* 在状态栏之上 */
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+}
+
+#history-window::-webkit-scrollbar {
+    width: 8px;
+}
+
+#history-window::-webkit-scrollbar-track {
+    background: rgba(91, 111, 107, 0.8);
+    border-radius: 4px;
+}
+
+#history-window::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+#history-window::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+#history-window.show {
+    transform: translateY(0); /* 显示时移入视图 */
+}
+
+#history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#history-list li {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    word-break: break-all;
+    font-family: Arial, sans-serif;
+}
+
+#history-list li:last-child {
+    border-bottom: none;
 }

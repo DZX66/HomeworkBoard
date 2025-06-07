@@ -16,4 +16,9 @@ contextBridge.exposeInMainWorld("api", {
     requestDayDetail: (date) => ipcRenderer.send("request-day-detail", date),
     onHistoryData: (callback) => ipcRenderer.on("history-data", (_event, value) => callback(value)),
     onDayDetail: (callback) => ipcRenderer.on("day-detail", (_event, value) => callback(value)),
+    undoClear: (callback) => ipcRenderer.on("undoClear", (_event) => callback()),
+    editCaption: (callback) => ipcRenderer.on("editCaption", (_event) => callback()),
+    initTemplates: (callback) => ipcRenderer.on("init-templates", (_event, value) => { callback(value) }),
+    saveTemplates: (templates) => ipcRenderer.send("save-templates", templates),
+    loadTemplates: (callback) => ipcRenderer.on("load-templates", (_event, value) => { callback(value) }),
 })

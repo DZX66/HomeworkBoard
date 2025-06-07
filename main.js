@@ -5,6 +5,7 @@ import path from 'path';
 import { exec } from 'child_process';
 import { fileURLToPath } from 'url';
 import pkg from 'sqlite3';
+import Config from './modules/config.js';
 
 const { verbose } = pkg;
 const sqlite3 = verbose();
@@ -38,43 +39,18 @@ if (!gotTheLock) {
     });
   }
 
-  // 新建sql
-  if (!fs.existsSync(path.join(__dirname, 'history.db'))) {
-    const dbPath = path.join(app.getPath('userData'), 'history.db');
-    var db = new sqlite3.Database(dbPath);
-
-    // 初始化数据库表
-    db.serialize(() => {
-      // 创建历史记录表
-      db.run(`CREATE TABLE IF NOT EXISTS history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    content TEXT NOT NULL,
-    subjects TEXT NOT NULL
-  )`);
-    });
-  }
 
   // 全局变量
+  /**
+   * @type {BrowserWindow}
+   */
   let mainWindow = null;
-  let config = store.get('config');
-  // 检查config合法性
-  if (!config || !Array.isArray(config.subjects) || !config.title || !config.caption || !Array.isArray(config.saveTime) || !config.zoom || !config.autoSaveGap) {
-    console.warn("config非法或缺失，已重置为默认配置");
-    config = {
-      subjects: ["语文", "数学", "英语", "物理", "化学", "生物", "政治", "历史", "地理", "信息", "通用"],
-      title: "HomeworkBoard",
-      caption: "晚自习作业清单",
-      style: "",
-      saveTime: [1220, 1300],
-      zoom: 1,
-      autoSaveGap: 10,
-    };
-    store.set('config', config);
-  }
+  let config = Config.init();
+  let db = null;
 
 
-  let lastTime = store.get('lastTime');
+
+  let lastTime = null;
 
   let contentTemp = store.get('contentTemp');
 
@@ -165,7 +141,66 @@ if (!gotTheLock) {
     {
       label: '编辑',
       submenu: [
-        { label: '清空', click: () => mainWindow.webContents.send('clear') },
+        {
+          label: '清空', click: () => {
+            mainWindow.webContents.send('clear');
+            Menu.getApplicationMenu().getMenuItemById("undoClear").enabled = true;
+          }
+        },
+        {
+          label: '撤销清空', click: () => {
+            mainWindow.webContents.send('undoClear');
+            Menu.getApplicationMenu().getMenuItemById("undoClear").enabled = false;
+          }, enabled: false, id: "undoClear"
+        },
+        { type: 'separator' },
+        { label: '修改标题...', click: () => mainWindow.webContents.send('editCaption') },
+        {
+          label: '编辑模板...', click: () => {
+            let templateWindow = new BrowserWindow({
+              width: 800,
+              height: 600,
+              show: false,
+              parent: mainWindow,
+              modal: true,
+              maximizable: false,
+              minimizable: false,
+              resizable: false,
+              autoHideMenuBar: true,
+              webPreferences: {
+                nodeIntegration: true,
+                preload: path.resolve(__dirname, './preload.js'),
+                spellcheck: false,
+              }
+            });
+
+            templateWindow.loadFile('./pages/template/template.html');
+            if (DEBUG) {
+              templateWindow.webContents.openDevTools({ mode: 'bottom' });
+            }
+
+            templateWindow.once('ready-to-show', () => {
+              // 发送当前模板数据到窗口
+              templateWindow.webContents.send('init-templates', config);
+              templateWindow.show();
+            });
+
+            // 监听模板保存事件
+            ipcMain.on('save-templates', (event, templates) => {
+              config.templates = templates;
+              store.set('config', config);
+              mainWindow.webContents.send('message', "模板已保存");
+              mainWindow.webContents.send('load-templates', templates);
+            });
+
+            templateWindow.once('closed', () => {
+              templateWindow = null;
+              ipcMain.removeAllListeners('save-templates');
+            });
+
+
+          }
+        },
       ]
     },
     {
@@ -202,6 +237,17 @@ if (!gotTheLock) {
           }
         }
       ]
+    },
+    {
+      label: '关于',
+      submenu: [
+        {
+          label: 'github',
+          click: () => {
+            exec(`start https://github.com/DZX66/HomeworkBoard`);
+          }
+        }
+      ]
     }
   ];
 
@@ -234,6 +280,7 @@ if (!gotTheLock) {
       width: 800,
       height: 600,
       show: false,
+      backgroundColor: '#baf4cc',
       webPreferences: {
         nodeIntegration: true,
         preload: path.resolve(__dirname, './preload.js'),
@@ -241,22 +288,57 @@ if (!gotTheLock) {
       }
     });
     mainWindow.maximize();
+    mainWindow.once('maximize', () => { mainWindow.show() });
     mainWindow.once('ready-to-show', () => {
       mainWindow.webContents.send('config', config);
+
+      mainWindow.webContents.send('contentTmp', contentTemp);
+
+      // mainWindow.show();
+
+      lastTime = store.get('lastTime');
       if (lastTime) {
         mainWindow.webContents.send('lastTime', lastTime);
       }
-      mainWindow.webContents.send('contentTmp', contentTemp);
+      // 初始化数据库
+      const dbPath = path.join(app.getPath('userData'), 'history.db');
+      db = new sqlite3.Database(dbPath);
 
-      mainWindow.show();
+      // 初始化数据库表
+      db.serialize(() => {
+        // 创建历史记录表
+        db.run(`CREATE TABLE IF NOT EXISTS history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    content TEXT NOT NULL,
+    subjects TEXT NOT NULL
+  )`);
+      });
+
+      if (DEBUG || config.debug) {
+        mainWindow.webContents.openDevTools({ mode: 'bottom' });
+      }
+
+      config.saveTime.forEach(element => {
+        console.log("created timer for ", element);
+        setupDailyTimer(element, () => {
+          mainWindow.webContents.send('save');
+        });
+      });
+
+
+      setInterval(() => {
+        mainWindow.webContents.send('saveTmp');
+        ipcMain.once("saveTmpRes", (event, res) => {
+          console.log(res);
+          store.set('contentTemp', res);
+          mainWindow.webContents.send('message', "自动保存成功。");
+        });
+      }, config.autoSaveGap * 60 * 1000);
+
     });
 
     mainWindow.loadFile('./pages/index/index.html');
-    if (DEBUG) {
-      mainWindow.webContents.openDevTools({ mode: 'bottom' });
-    }
-
-
 
 
     mainWindow.once('close', (e) => {
@@ -274,21 +356,14 @@ if (!gotTheLock) {
     // 窗口关闭时关闭数据库连接
     mainWindow.on('closed', () => {
       db.close((err) => {
-        if (err) console.error("关闭数据库连接失败:", err);
-        else console.log("数据库连接已关闭");
+        if (err) console.error("error closing database connection:", err);
+        else console.log("database connection closed");
       });
     });
 
     ipcMain.on('zoom', (event, zoom) => {
       mainWindow.webContents.setZoomFactor(zoom);
       config.zoom = zoom;
-    });
-
-    config.saveTime.forEach(element => {
-      console.log("created timer for ", element);
-      setupDailyTimer(element, () => {
-        mainWindow.webContents.send('save');
-      });
     });
 
 
@@ -316,7 +391,7 @@ if (!gotTheLock) {
         "SELECT id FROM history WHERE DATE(datetime(timestamp, '+8 hours')) = DATE('now', 'localtime') LIMIT 1",
         (err, row) => {
           if (err) {
-            console.error("查询今日记录失败:", err);
+            console.error("error selecting last history record:", err);
             return;
           }
           if (row) {
@@ -330,13 +405,14 @@ if (!gotTheLock) {
               row.id,
               function (updateErr) {
                 if (updateErr) {
-                  console.error("更新历史记录失败:", updateErr);
+                  console.error("error updating history record:", updateErr);
                 } else {
-                  console.log("历史记录已更新，ID:", row.id);
+                  console.log("history record updated, ID:", row.id);
                 }
                 updateStmt.finalize();
               }
             );
+            mainWindow.webContents.send('message', "今日已保存（覆盖）。");
           } else {
             // 不存在今日记录，执行INSERT
             const insertStmt = db.prepare(
@@ -347,28 +423,20 @@ if (!gotTheLock) {
               JSON.stringify(config.subjects), // 新增科目配置
               function (insertErr) {
                 if (insertErr) {
-                  console.error("插入历史记录失败:", insertErr);
+                  console.error("error inserting history record:", insertErr);
                 } else {
-                  console.log("历史记录已插入，ID:", this.lastID);
+                  console.log("history record inserted, ID:", this.lastID);
                 }
                 insertStmt.finalize();
               }
             );
+            mainWindow.webContents.send('message', "今日已保存。");
           }
         }
       );
-      mainWindow.webContents.send('message', "今日已保存。");
       mainWindow.webContents.send('lastTime', store.get('lastTime'));
     });
 
-    setInterval(() => {
-      mainWindow.webContents.send('saveTmp');
-      ipcMain.once("saveTmpRes", (event, res) => {
-        console.log(res);
-        store.set('contentTemp', res);
-        mainWindow.webContents.send('message', "自动保存成功。");
-      });
-    }, config.autoSaveGap * 60 * 1000);
 
     ipcMain.on('captionEdit', (event, caption) => {
       config.caption = caption;
@@ -388,7 +456,7 @@ if (!gotTheLock) {
         [startDate, endDate],
         (err, rows) => {
           if (err) {
-            console.error('查询历史记录失败:', err);
+            console.error('error selecting history records:', err);
             return;
           }
 

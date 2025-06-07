@@ -4,8 +4,10 @@ function test() {
 
 let subjects = null;
 let content = null;
+let contentTmp = null;
 let config = null;
 let lastTime = null;
+let msgHistory = [];
 
 
 // 模块化编辑对话框
@@ -87,13 +89,18 @@ api.config((_config) => {
     document.getElementById('title').innerHTML = _config.title;
     zoomLevel = _config.zoom;
     updateZoom();
+
+    var style = document.createElement('style');
+    document.head.appendChild(style);
+    style.innerHTML = _config.style;
+
     config = _config;
 
     // 初始化数据结构
     content = subjects.map(() => []); // 每个科目初始化一个空任务
 
     // 获取容器并清空现有内容
-    const container = document.querySelector('.container > ol');
+    const container = document.querySelector('.right-panel > ol');
     container.innerHTML = '';
 
     // 动态生成科目列表
@@ -199,7 +206,7 @@ function getCursorPosition(textarea) {
     document.body.appendChild(tempDiv);
 
     const span = document.createElement('span');
-    span.textContent = ''; // 占位字符
+    span.textContent = '‍'; // 占位字符（零宽字符）
     tempDiv.appendChild(span);
 
     const rect = span.getBoundingClientRect();
@@ -233,19 +240,12 @@ function autoResize(textarea) {
     textarea.style.height = `${Math.max(textarea.scrollHeight, lineHeight + padding)}px`;
 }
 
-function createLine(index, insert = -1) {
+function createLineDOM(index, nodeI) {
     let node = document.createElement('li');
     let textarea = document.createElement('textarea');
-    if (insert == -1) {
-        node.i = content[index].length;
-        content[index].push("");
-    } else {
-        node.i = insert;
-        content[index].splice(insert, 0, "");
-        const event = new CustomEvent('insert', { detail: { index: index, insert: insert } });
-        document.dispatchEvent(event);
-    }
-    if (content[index].length == 1) { textarea.id = "subject-" + index; }
+
+    node.i = nodeI;
+    if (nodeI == 0) { textarea.id = "subject-" + index; }
     textarea.addEventListener('input', (e) => {
         content[index][node.i] = textarea.value;
         // 检测中文左括号
@@ -268,16 +268,20 @@ function createLine(index, insert = -1) {
                 node.insertAdjacentElement('afterend', new_node);
                 new_node.children[0].focus();
             }
-        } else if (e.key == 'Backspace' && node.i != 0 && textarea.value == "" && content[index].length > 1) {
+        } else if (e.key == 'Backspace' && textarea.value == "" && content[index].length > 1) {
             e.preventDefault();
             let prev_node = node.previousSibling;
             if (prev_node) {
                 prev_node.children[0].focus();
-                node.remove();
-                content[index].splice(node.i, 1);
-                const event = new CustomEvent('delete', { detail: { index: index, i: node.i } });
-                document.dispatchEvent(event);
+            } else {
+                node.nextElementSibling.children[0].focus();
             }
+            node.remove();
+            content[index].splice(node.i, 1);
+            const event = new CustomEvent('delete', { detail: { index: index, i: node.i } });
+            document.dispatchEvent(event);
+        } else if (e.key == ' ' && textarea.value == "") {
+            e.preventDefault();
         }
     });
     textarea.addEventListener('focus', () => {
@@ -304,44 +308,61 @@ function createLine(index, insert = -1) {
     return node;
 }
 
+
+function createLine(index, insert = -1) {
+    if (insert == -1) {
+        var nodeI = content[index].length;
+        content[index].push("");
+    } else {
+        var nodeI = insert;
+        content[index].splice(insert, 0, "");
+        const event = new CustomEvent('insert', { detail: { index: index, insert: insert } });
+        document.dispatchEvent(event);
+    }
+    let node = createLineDOM(index, nodeI);
+    return node;
+}
+
 var coplit = null;
 
 function generateCoplit(options, rect) {
-    const coplit = document.createElement('div');
-    coplit.className = 'coplit-container';
+    if (options.length > 0) {
+        const coplit = document.createElement('div');
+        coplit.className = 'coplit-container';
 
-    options.forEach(opt => {
-        const optionItem = document.createElement('div');
-        optionItem.className = 'coplit-option';
-        const tip = document.createElement('div');
-        tip.className = 'coplit-hint';
-        tip.textContent = opt.label;
-        const apply_hint = document.createElement('div');
-        apply_hint.className = 'coplit-apply-hint';
-        apply_hint.textContent = opt.hint;
-        optionItem.addEventListener('click', opt.handler);
-        optionItem.addEventListener("mousedown", (e) => e.preventDefault());
-        optionItem.appendChild(tip);
-        optionItem.appendChild(apply_hint);
-        coplit.appendChild(optionItem);
-    });
+        options.forEach(opt => {
+            const optionItem = document.createElement('div');
+            optionItem.className = 'coplit-option';
+            const tip = document.createElement('div');
+            tip.className = 'coplit-hint';
+            tip.textContent = opt.label;
+            const apply_hint = document.createElement('div');
+            apply_hint.className = 'coplit-apply-hint';
+            apply_hint.textContent = opt.hint;
+            optionItem.addEventListener('click', opt.handler);
+            optionItem.addEventListener("mousedown", (e) => e.preventDefault());
+            optionItem.appendChild(tip);
+            optionItem.appendChild(apply_hint);
+            coplit.appendChild(optionItem);
+        });
 
-    // 定位逻辑
-    coplit.style.position = 'fixed';
-    coplit.style.left = `${rect.left}px`;
-    if (rect.bottom + coplit.offsetHeight + 5 > window.innerHeight / 2) {
-        coplit.style.bottom = `${window.innerHeight - rect.top + 5}px`; // 向上定位
-    } else {
-        coplit.style.top = `${rect.bottom + 5}px`; // 向下定位
+        // 定位逻辑
+        coplit.style.position = 'fixed';
+        coplit.style.left = `${rect.left}px`;
+        if (rect.bottom + coplit.offsetHeight + 5 > window.innerHeight / 2) {
+            coplit.style.bottom = `${window.innerHeight - rect.top + 5}px`; // 向上定位
+        } else {
+            coplit.style.top = `${rect.bottom + 5}px`; // 向下定位
+        }
+        // 边界检测（防止超出屏幕）
+        document.body.appendChild(coplit);
+        const rightEdge = rect.left + coplit.offsetWidth;
+        if (rightEdge > window.innerWidth) {
+            coplit.style.left = `${window.innerWidth - coplit.offsetWidth - 5}px`;
+        }
+
+        return coplit;
     }
-    // 边界检测（防止超出屏幕）
-    document.body.appendChild(coplit);
-    const rightEdge = rect.left + coplit.offsetWidth;
-    if (rightEdge > window.innerWidth) {
-        coplit.style.left = `${window.innerWidth - coplit.offsetWidth - 5}px`;
-    }
-
-    return coplit;
 }
 
 /**
@@ -353,11 +374,11 @@ function triggerCoplit(index, node, key) {
     hideCoplit(); // 先清除旧的coplit
 
     const textarea = node.querySelector('textarea');
-    const rect = textarea.getBoundingClientRect();
 
+    let options = [];
     if (key === "（") {
         // 中文括号触发选项
-        coplit = generateCoplit([
+        options.push(
             {
                 label: "（交）",
                 hint: "点击插入",
@@ -386,11 +407,11 @@ function triggerCoplit(index, node, key) {
                     content[index][node.i] = textarea.value;
                 }
             }
-        ], getCursorPosition(textarea));
+        );
 
-    } else if (content[index].length === 1 && textarea.value === "") {
+    }
+    if (content[index].length === 1 && textarea.value === "") {
         // 原有历史记录逻辑
-        const options = [];
         if (lastTime && lastTime[index][0]) {
             options.push({
                 label: lastTime[index][0] + (lastTime[index].length > 1 ? "..." : ""),
@@ -412,10 +433,27 @@ function triggerCoplit(index, node, key) {
                     hideCoplit();
                 }
             });
-
-            coplit = generateCoplit(options, rect);
         }
     }
+    if (textarea.value == "") {
+        // 模板功能
+        if (config.templates[config.subjects[index]] && config.templates[config.subjects[index]].length > 0) {
+            config.templates[config.subjects[index]].forEach(template => {
+                options.push({
+                    label: template,
+                    hint: "点击应用模板",
+                    handler: () => {
+                        textarea.value = template;
+                        autoResize(textarea);
+                        hideCoplit();
+                        content[index][node.i] = template;
+                    }
+                });
+            });
+        }
+    }
+    coplit = generateCoplit(options, getCursorPosition(textarea));
+
 }
 
 function hideCoplit() {
@@ -438,8 +476,9 @@ api.saveTmp(() => {
 });
 
 api.clear(() => {
+    contentTmp = content.map(subArr => [...subArr]);
     content = subjects.map(() => []);
-    const container = document.querySelector('.container > ol');
+    const container = document.querySelector('.right-panel > ol');
     container.innerHTML = '';
     subjects.forEach((subject, index) => {
         const subjectItem = document.createElement('li');
@@ -461,8 +500,50 @@ api.clear(() => {
         // 组装元素
         subjectItem.append(label, taskList);
         container.appendChild(subjectItem);
+        autoResize(line.querySelector('textarea'));
     });
 });
+api.undoClear(() => {
+    if (contentTmp) {
+        content = contentTmp.map(subArr => [...subArr]);
+        contentTmp = null;
+
+        // 清空现有DOM
+        const container = document.querySelector('.right-panel > ol');
+        container.innerHTML = '';
+
+        // 重新创建科目和任务列表
+        subjects.forEach((subject, index) => {
+            const subjectItem = document.createElement('li');
+            subjectItem.className = 'subject-item';
+
+            // 科目标签
+            const label = document.createElement('label');
+            label.className = 'subject-label';
+            label.textContent = subject;
+            label.htmlFor = "subject-" + index;
+
+            // 任务列表
+            const taskList = document.createElement('ol');
+            taskList.className = 'tasks-list';
+
+            // 组装元素
+            subjectItem.append(label, taskList);
+            container.appendChild(subjectItem);
+
+            // 重新填充任务项
+            content[index].forEach((taskText, taskIndex) => {
+                const node = createLineDOM(index, taskIndex);
+                const textarea = node.querySelector('textarea');
+                textarea.value = taskText;
+                taskList.appendChild(node);
+                autoResize(textarea);
+            });
+        });
+
+    }
+});
+
 
 let zoomLevel = 1.0
 const zoomStep = 0.05
@@ -491,7 +572,12 @@ document.getElementById('zoom-out').addEventListener('click', () => {
 
 api.message((message) => {
     let time = new Date();
-    document.getElementById('message').textContent = "[" + time.getHours() + ":" + (time.getMinutes() < 10 ? "0" : "") + time.getMinutes() + "]" + message;
+    let msg = "[" + time.getHours() + ":" + (time.getMinutes() < 10 ? "0" : "") + time.getMinutes() + "]" + message;
+    document.getElementById('message').textContent = msg;
+    msgHistory.push(msg);
+    if (msgHistory.length > 10) {
+        msgHistory.shift();
+    }
 })
 
 function save() {
@@ -508,10 +594,10 @@ window.addEventListener('load', () => {
 var time = new Date();
 document.getElementById('time').innerHTML = "今天是" + (time.getMonth() + 1) + "月" + time.getDate() + "日 ";
 
-document.getElementById('caption').addEventListener('click', () => {
+function openCaptionEdit() {
     const currentCaption = document.getElementById('caption').textContent;
 
-    EditDialog.show(currentCaption, "晚自习作业清单" ,(newCaption) => {
+    EditDialog.show(currentCaption, "晚自习作业清单", (newCaption) => {
         if (newCaption && newCaption.trim() !== '') {
             // 更新本地配置
             config.caption = newCaption.trim();
@@ -521,4 +607,49 @@ document.getElementById('caption').addEventListener('click', () => {
             api.captionEdit(config.caption);
         }
     });
+}
+
+document.getElementById('caption').addEventListener('click', openCaptionEdit);
+
+api.editCaption(() => {
+    openCaptionEdit();
+});
+
+
+// 添加历史记录窗口功能
+const historyWindow = document.getElementById('history-window');
+const historyList = document.getElementById('history-list');
+
+// 点击消息显示历史记录
+document.getElementById('message').addEventListener('click', function (e) {
+    e.stopPropagation();
+
+    // 填充历史记录
+    historyList.innerHTML = '';
+    msgHistory.forEach(msg => {
+        const li = document.createElement('li');
+        li.textContent = msg;
+        historyList.appendChild(li);
+    });
+
+    // 显示窗口
+    historyWindow.classList.add('show');
+});
+
+// 点击其他地方关闭历史记录窗口
+document.addEventListener('click', function (e) {
+    if (historyWindow.classList.contains('show') &&
+        !historyWindow.contains(e.target) &&
+        e.target.id !== 'message') {
+        historyWindow.classList.remove('show');
+    }
+});
+
+// 防止点击历史窗口内部时关闭
+historyWindow.addEventListener('click', function (e) {
+    e.stopPropagation();
+});
+
+api.loadTemplates((templates) => {
+    config.templates = templates;
 });
