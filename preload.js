@@ -21,4 +21,6 @@ contextBridge.exposeInMainWorld("api", {
     initTemplates: (callback) => ipcRenderer.on("init-templates", (_event, value) => { callback(value) }),
     saveTemplates: (templates) => ipcRenderer.send("save-templates", templates),
     loadTemplates: (callback) => ipcRenderer.on("load-templates", (_event, value) => { callback(value) }),
+    selectImage: () => ipcRenderer.invoke('select-image'),
+    updateImagePaths: (paths) => ipcRenderer.send('update-image-paths', paths),
 })

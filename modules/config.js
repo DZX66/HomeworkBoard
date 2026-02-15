@@ -20,6 +20,7 @@ class Config {
                 autoSaveGap: 1,
                 debug: 1,
                 templates: 1,
+                image: 1,               // 新增图片配置版本
             },
             subjects: ["语文", "数学", "英语", "物理", "化学", "生物", "政治", "历史", "地理", "信息", "通用"],
             title: "HomeworkBoard",
@@ -30,6 +31,7 @@ class Config {
             autoSaveGap: 10,
             debug: false,
             templates: {},
+            imagePaths: [],              // 新增图片路径字段，默认为空
         };
         let config = store.get('config');
         if (!config) {

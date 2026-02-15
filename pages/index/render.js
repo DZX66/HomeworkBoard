@@ -170,6 +170,9 @@ api.config((_config) => {
         }, 0);
 
     });
+    // 新增：初始化图片卡片
+    let imagePaths = config.imagePaths;
+    renderImageCard(imagePaths || []);
 });
 
 /**
@@ -653,3 +656,103 @@ historyWindow.addEventListener('click', function (e) {
 api.loadTemplates((templates) => {
     config.templates = templates;
 });
+
+// ==================== 新增：自定义确认对话框模块 ====================
+const ConfirmDialog = (() => {
+    let dialogElement = null;
+    let callback = null;
+
+    const createDialog = (message) => {
+        const dialog = document.createElement('div');
+        dialog.id = 'confirm-dialog';
+        dialog.innerHTML = `
+            <div class="dialog-content">
+                <h3>确认删除</h3>
+                <p>${message}</p>
+                <div class="dialog-buttons">
+                    <button id="dialog-confirm-delete">确认</button>
+                    <button id="dialog-cancel-delete">取消</button>
+                </div>
+            </div>
+        `;
+        return dialog;
+    };
+
+    return {
+        show: (message, onConfirm) => {
+            if (dialogElement) return;
+            callback = onConfirm;
+            dialogElement = createDialog(message);
+            document.body.appendChild(dialogElement);
+            setTimeout(() => dialogElement.classList.add('show'), 10);
+
+            const handleConfirm = () => {
+                if (callback) callback();
+                ConfirmDialog.hide();
+            };
+            const handleCancel = () => ConfirmDialog.hide();
+            const handleBackgroundClick = (e) => {
+                if (e.target === dialogElement) ConfirmDialog.hide();
+            };
+
+            dialogElement.addEventListener('click', handleBackgroundClick);
+            dialogElement.querySelector('#dialog-confirm-delete').addEventListener('click', handleConfirm);
+            dialogElement.querySelector('#dialog-cancel-delete').addEventListener('click', handleCancel);
+        },
+        hide: () => {
+            if (dialogElement) {
+                dialogElement.classList.remove('show');
+                setTimeout(() => {
+                    dialogElement.remove();
+                    dialogElement = null;
+                    callback = null;
+                }, 300);
+            }
+        }
+    };
+})();
+
+// ==================== 新增：图片卡片渲染函数 ====================
+function renderImageCard(imagePaths) {
+    const imageCard = document.getElementById('image-card');
+    if (!imageCard) return;
+
+    imageCard.innerHTML = ''; // 清空
+
+    if (imagePaths && imagePaths.length > 0) {
+        // 显示所有图片
+        imagePaths.forEach((path, index) => {
+            const container = document.createElement('div');
+            container.className = 'image-item';
+            const img = document.createElement('img');
+            img.src = path;
+            img.alt = `图片${index+1}`;
+            img.addEventListener('click', () => {
+                ConfirmDialog.show('确定要删除这张图片吗？', () => {
+                    // 从数组中移除该路径
+                    const newPaths = imagePaths.filter((_, i) => i !== index);
+                    config.imagePaths = newPaths;
+                    api.updateImagePaths(newPaths);
+                    renderImageCard(newPaths);
+                });
+            });
+            container.appendChild(img);
+            imageCard.appendChild(container);
+        });
+    }
+
+    // 添加图片按钮
+    const addBtn = document.createElement('button');
+    addBtn.textContent = '添加图片';
+    addBtn.className = 'add-image-btn';
+    addBtn.addEventListener('click', async () => {
+        const path = await api.selectImage();
+        if (path) {
+            const newPaths = imagePaths ? [...imagePaths, path] : [path];
+            config.imagePaths = newPaths;
+            api.updateImagePaths(newPaths);
+            renderImageCard(newPaths);
+        }
+    });
+    imageCard.appendChild(addBtn);
+}

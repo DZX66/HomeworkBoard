@@ -43,20 +43,61 @@
       flex-direction: column;
     }
     .template-header {
-      font-size: 18px;
-      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
       padding-bottom: 10px;
       border-bottom: 1px solid #eee;
+      font-size: 18px;
     }
-    textarea {
+    .add-btn {
+      padding: 5px 12px;
+      background: #52c41a;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .add-btn:hover {
+      background: #73d13d;
+    }
+    .template-entries {
       flex: 1;
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      resize: none;
-      font-family: inherit;
+      overflow-y: auto;
+      border: 1px solid #eee;
+      padding: 10px;
+      background: #fafafa;
+      border-radius: 4px;
+    }
+    .template-entry {
+      display: flex;
+      margin-bottom: 8px;
+    }
+    .template-entry input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
       font-size: 14px;
-      line-height: 1.5;
+    }
+    .template-entry input:focus {
+      border-color: #40a9ff;
+      outline: none;
+    }
+    .delete-entry-btn {
+      margin-left: 8px;
+      padding: 0 12px;
+      background: #ff4d4f;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .delete-entry-btn:hover {
+      background: #ff7875;
     }
     .button-group {
       margin-top: 15px;
@@ -88,8 +129,13 @@
     </div>
     
     <div class="template-editor">
-      <div class="template-header">模板内容：<span id="currentSubject"></span></div>
-      <textarea id="templateArea" placeholder="每行一个模板..."></textarea>
+      <div class="template-header">
+        <span>模板内容：<span id="currentSubject"></span></span>
+        <button class="add-btn" id="addEntryBtn">+ 添加模板</button>
+      </div>
+      <div id="templateEntries" class="template-entries">
+        <!-- 动态生成的输入条目列表 -->
+      </div>
       <div class="button-group">
         <button class="cancel-btn" id="cancelBtn">取消</button>
         <button class="save-btn" id="saveBtn">保存模板</button>

@@ -497,4 +497,22 @@ if (!gotTheLock) {
       );
     });
   });
+
+  ipcMain.handle('select-image', async (event) => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [{ name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'bmp'] }]
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
+  });
+
+
+ipcMain.on('update-image-paths', (event, paths) => {
+    config.imagePaths = paths;
+    store.set('config', config);
+    console.log("Updated image paths:", paths);
+});
 }

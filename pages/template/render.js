@@ -2,7 +2,6 @@ let currentSubject = null;
 let templates = {};
 let config = {};
 
-
 // 初始化模板数据
 api.initTemplates((data) => {
   config = data;
@@ -29,6 +28,40 @@ function renderSubjectList() {
   });
 }
 
+// 创建一个模板条目（包含输入框和删除按钮）
+function createTemplateEntry(value = '') {
+  const div = document.createElement('div');
+  div.className = 'template-entry';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'template-entry-input';
+  input.value = value;
+  input.placeholder = '输入模板内容';
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'delete-entry-btn';
+  delBtn.textContent = '删除';
+  delBtn.addEventListener('click', () => {
+    div.remove(); // 移除当前条目
+  });
+
+  div.appendChild(input);
+  div.appendChild(delBtn);
+  return div;
+}
+
+// 渲染当前科目的模板条目列表
+function renderTemplateEntries(subject) {
+  const container = document.getElementById('templateEntries');
+  container.innerHTML = ''; // 清空现有条目
+
+  const subjectTemplates = templates[subject] || [];
+  subjectTemplates.forEach(value => {
+    container.appendChild(createTemplateEntry(value));
+  });
+}
+
 // 选择科目
 function selectSubject(subject) {
   currentSubject = subject;
@@ -39,19 +72,29 @@ function selectSubject(subject) {
     el.classList.toggle('active', el.textContent === subject);
   });
 
-  // 加载该科目的模板
-  const subjectTemplates = templates[subject] || [];
-  document.getElementById('templateArea').value = subjectTemplates.join('\n');
+  // 渲染该科目的模板条目
+  renderTemplateEntries(subject);
 }
+
+// 添加条目按钮
+document.getElementById('addEntryBtn').addEventListener('click', () => {
+  if (!currentSubject) return; // 没有选中科目时不操作
+  const container = document.getElementById('templateEntries');
+  container.appendChild(createTemplateEntry('')); // 新增空白条目
+});
 
 // 保存模板
 document.getElementById('saveBtn').addEventListener('click', () => {
   if (!currentSubject) return;
 
-  const content = document.getElementById('templateArea').value;
-  templates[currentSubject] = content.split('\n').filter(line => line.trim());
+  const container = document.getElementById('templateEntries');
+  const inputs = container.querySelectorAll('.template-entry-input');
+  // 过滤掉空字符串（trim后为空）
+  const values = Array.from(inputs)
+    .map(input => input.value.trim())
+    .filter(v => v !== '');
 
-  // 发送到主进程保存
+  templates[currentSubject] = values;
   api.saveTemplates(templates);
 });
 
