@@ -13,20 +13,27 @@ body {
     user-select: none;
 }
 
+/* 主容器：左右两栏布局 */
 .container {
     display: grid;
-    grid-template-columns: 1fr 4fr; /* 左1右4的比例 */
+    grid-template-columns: 1fr 4fr;
     gap: 1rem;
     width: 100%;
     transition: all 0.4s ease;
     opacity: 1;
     transform: translateY(0);
-    grid-auto-rows: min-content;   /* 行高由内容撑开 */
+    grid-auto-rows: min-content;
 }
 
+.container.hidden {
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+/* 左侧面板（粘滞） */
 .left-panel {
     position: sticky;
-    top: 2rem; /* 与容器内边距一致 */
+    top: 2rem;
     align-self: start;
     display: flex;
     flex-direction: column;
@@ -34,6 +41,7 @@ body {
     grid-row: span 2;
 }
 
+/* 通用卡片样式 */
 .info-card {
     background: #f8f9fa;
     border-radius: 8px;
@@ -42,90 +50,33 @@ body {
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-/* 图片卡片定位到第二行第二列，并添加上边距 */
-.image-card {
-    grid-column: 2;
-    grid-row: 2;
-    margin-top: 1rem;
-}
-
+/* 右侧面板 */
 .right-panel {
     width: 100%;
     padding-left: 1rem;
     padding-right: 1rem;
 }
 
-.container.hidden {
-    opacity: 0;
-    transform: translateY(30px);
-}
-
-/* 卡片内图片样式 */
-.image-card img {
-    max-width: 100%;
-    max-height: 300px;      /* 限制最大高度，避免卡片过大 */
-    display: block;
-    margin: 0 auto;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-/* 添加图片按钮样式 */
-.add-image-btn {
-    display: block;
-    width: 100%;
-    padding: 1rem;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1.2em;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.add-image-btn:hover {
-    background: #45a049;
-}
-
-
+/* 标题样式 */
 h1 {
-    text-align: center; 
+    text-align: center;
     color: #2c3e50;
     margin: 0;
     font-family: Arial, sans-serif;
-    font-size: 1.8em; /* 稍微减小字号 */
+    font-size: 1.8em;
     font-weight: 600;
 }
 
 h3 {
-    text-align: center; 
+    text-align: center;
     color: #2c3e50;
     margin: 0;
     font-family: Arial, sans-serif;
-    font-size: 1.4em; /* 稍微减小字号 */
+    font-size: 1.4em;
     font-weight: 450;
 }
 
-/* 响应式调整 */
-@media (max-width: 768px) {
-    .container {
-        grid-template-columns: 1fr;
-    }
-    
-    .left-panel {
-        position: static;
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-    
-    .info-card {
-        flex: 1;
-        min-width: 200px;
-    }
-}
-
-
+/* 作业列表布局 */
 ol {
     list-style: none;
     padding: 0;
@@ -152,6 +103,7 @@ ol {
     margin: 0;
 }
 
+/* 任务输入框（文本域） */
 textarea {
     box-sizing: border-box;
     width: 100%;
@@ -175,13 +127,11 @@ textarea:focus {
     background: white;
 }
 
-/* 处理最后一个文本域的边距 */
 .tasks-list li:last-child textarea {
     margin-bottom: 0;
 }
 
-
-/* 历史记录提示框样式 */
+/* 自动补全提示框 */
 .coplit-container {
     background: white;
     border: 1px solid #ccc;
@@ -222,11 +172,11 @@ textarea:focus {
     text-align: center;
 }
 
-/* 确保textarea相对定位 */
 .tasks-list li {
     position: relative;
 }
 
+/* 缩放控件 */
 .zoom-controls {
     position: fixed;
     bottom: 20px;
@@ -263,6 +213,7 @@ textarea:focus {
     font-family: Arial, sans-serif;
 }
 
+/* 底部状态栏 */
 #status-bar {
     position: fixed;
     bottom: 0;
@@ -303,6 +254,66 @@ textarea:focus {
     height: 16px;
 }
 
+/* 历史记录窗口 */
+#history-window {
+    position: fixed;
+    bottom: -5px;
+    left: 0;
+    right: 40%;
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(91, 111, 107, 0.9);
+    backdrop-filter: blur(5px);
+    color: white;
+    padding: 10px;
+    border-radius: 8px 8px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 1001;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+}
+
+#history-window::-webkit-scrollbar {
+    width: 8px;
+}
+
+#history-window::-webkit-scrollbar-track {
+    background: rgba(91, 111, 107, 0.8);
+    border-radius: 4px;
+}
+
+#history-window::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+#history-window::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+#history-window.show {
+    transform: translateY(0);
+}
+
+#history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#history-list li {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    word-break: break-all;
+    font-family: Arial, sans-serif;
+}
+
+#history-list li:last-child {
+    border-bottom: none;
+}
+
+/* 编辑对话框（修改标题） */
 #edit-dialog {
     position: fixed;
     top: 0;
@@ -396,66 +407,7 @@ textarea:focus {
     background: #da190b;
 }
 
-/* 添加历史记录窗口样式 */
-#history-window {
-    position: fixed;
-    bottom: -5px; /* 在状态栏上方 */
-    left: 0;
-    right: 40%;
-    max-height: 200px;
-    overflow-y: auto;
-    background: rgba(91, 111, 107, 0.9); /* 半透明背景 */
-    backdrop-filter: blur(5px);
-    color: white;
-    padding: 10px;
-    border-radius: 8px 8px 0 0;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    z-index: 1001; /* 在状态栏之上 */
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
-}
-
-#history-window::-webkit-scrollbar {
-    width: 8px;
-}
-
-#history-window::-webkit-scrollbar-track {
-    background: rgba(91, 111, 107, 0.8);
-    border-radius: 4px;
-}
-
-#history-window::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-}
-
-#history-window::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
-}
-
-#history-window.show {
-    transform: translateY(0); /* 显示时移入视图 */
-}
-
-#history-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#history-list li {
-    padding: 5px 10px;
-    font-size: 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    word-break: break-all;
-    font-family: Arial, sans-serif;
-}
-
-#history-list li:last-child {
-    border-bottom: none;
-}
-
-/* 为自定义确认对话框添加样式（可复用编辑对话框样式） */
+/* 确认对话框（删除确认） */
 #confirm-dialog {
     position: fixed;
     top: 0;
@@ -472,10 +424,12 @@ textarea:focus {
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;
 }
+
 #confirm-dialog.show {
     opacity: 1;
     visibility: visible;
 }
+
 #confirm-dialog .dialog-content {
     background: white;
     padding: 2rem;
@@ -486,21 +440,26 @@ textarea:focus {
     opacity: 0;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 #confirm-dialog.show .dialog-content {
     transform: translateY(0);
     opacity: 1;
 }
+
 #confirm-dialog h3 {
     margin: 0 0 1rem 0;
 }
+
 #confirm-dialog p {
     margin-bottom: 1.5rem;
 }
+
 #confirm-dialog .dialog-buttons {
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
 }
+
 #confirm-dialog button {
     padding: 0.5rem 1rem;
     border: none;
@@ -508,71 +467,144 @@ textarea:focus {
     cursor: pointer;
     font-size: 1em;
 }
+
 #dialog-confirm-delete {
     background: #f44336;
     color: white;
 }
+
 #dialog-confirm-delete:hover {
     background: #da190b;
 }
+
 #dialog-cancel-delete {
     background: #e0e0e0;
 }
+
 #dialog-cancel-delete:hover {
     background: #bdbdbd;
 }
 
-
-/* 图片卡片容器：竖向排列 */
+/* -------------------- 图片卡片区域（统一整理） -------------------- */
 .image-card {
+    /* 网格定位 */
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 1rem;
+    /* 内部布局 */
     display: flex;
-    flex-direction: column;  /* 改为列布局，每张图片占一行 */
-    gap: 1rem;               /* 图片之间的间距 */
-    align-items: stretch;    /* 子项宽度填满容器 */
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
 }
 
-/* 单个图片项：占满宽度，限制最大高度 */
-.image-card .image-item {
-    position: relative;
-    width: 100%;             /* 撑满卡片宽度 */
-    max-height: 400px;       /* 限制最大高度，可根据需要调整 */
-    overflow: hidden;        /* 防止图片溢出，配合 object-fit 使用 */
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-/* 图片本身：宽度铺满，高度自适应，保持比例 */
-.image-card .image-item img {
+/* 图片卡片工具栏 */
+.image-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     width: 100%;
-    height: auto;
-    display: block;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    object-fit: contain;     /* 保持原比例，可能留白；也可用 cover 填满 */
-    max-height: inherit;     /* 继承父元素的 max-height */
+    margin-bottom: 0.75rem;
 }
 
-/* 添加图片按钮：靠右、窄宽度 */
-.add-image-btn {
-    align-self:auto;    /* 在 flex 列布局中右对齐 */
-    width: 100%;             /* 宽度由内容撑开 */
-    padding: 0.5rem 1.5rem;  /* 上下内边距稍小，左右适中，使按钮窄一些 */
+/* 添加图片按钮（位于工具栏内） */
+.image-toolbar .add-image-btn {
+    width: auto;
+    padding: 0.4rem 1.2rem;
     background: #4CAF50;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 1.2em;
-    margin-top: 0.5rem;      /* 与上方图片保持间距 */
+    font-size: 1em;
     transition: background 0.2s;
 }
 
-.add-image-btn:hover {
+.image-toolbar .add-image-btn:hover {
     background: #45a049;
 }
 
-/* 悬停删除提示（沿用原样式，微调位置） */
-.image-card .image-item:hover::after {
+/* 双图标布局切换按钮组 */
+.layout-toggle-group {
+    display: flex;
+    gap: 4px;
+}
+
+.layout-toggle-btn {
+    width: 36px;
+    height: 36px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.4em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.layout-toggle-btn:hover {
+    background: #2980b9;
+}
+
+.layout-toggle-btn.active {
+    background: #1f6aa5;
+    box-shadow: inset 0 0 0 2px white;
+}
+
+/* 图片列表容器 */
+.image-items-container {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+
+/* 纵向布局（默认） */
+.image-card.vertical .image-items-container {
+    flex-direction: column;
+}
+
+.image-card.vertical .image-item {
+    width: 100%;
+    max-height: 400px;
+}
+
+/* 横向布局（两列） */
+.image-card.horizontal .image-items-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.image-card.horizontal .image-item {
+    flex: 0 0 auto;
+    width: calc(50% - 0.5rem);
+    max-height: 250px;
+}
+
+/* 单个图片项 */
+.image-item {
+    position: relative;
+    width: 100%;
+    max-height: 400px;
+    overflow: hidden;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.image-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    object-fit: contain;
+    max-height: inherit;
+}
+
+/* 悬停删除提示 */
+.image-item:hover::after {
     content: "点击删除";
     position: absolute;
     top: 50%;
@@ -585,4 +617,29 @@ textarea:focus {
     font-size: 14px;
     pointer-events: none;
     white-space: nowrap;
+}
+
+/* -------------------- 响应式调整 -------------------- */
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+
+    .left-panel {
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .info-card {
+        flex: 1;
+        min-width: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .image-card.horizontal .image-item {
+        width: 100%;
+    }
 }

@@ -8,6 +8,7 @@ let contentTmp = null;
 let config = null;
 let lastTime = null;
 let msgHistory = [];
+let imageLayout = 'column'; // 'column' 或 'row'
 
 
 // 模块化编辑对话框
@@ -712,47 +713,96 @@ const ConfirmDialog = (() => {
     };
 })();
 
-// ==================== 新增：图片卡片渲染函数 ====================
 function renderImageCard(imagePaths) {
     const imageCard = document.getElementById('image-card');
     if (!imageCard) return;
 
     imageCard.innerHTML = ''; // 清空
 
-    if (imagePaths && imagePaths.length > 0) {
-        // 显示所有图片
-        imagePaths.forEach((path, index) => {
-            const container = document.createElement('div');
-            container.className = 'image-item';
-            const img = document.createElement('img');
-            img.src = path;
-            img.alt = `图片${index+1}`;
-            img.addEventListener('click', () => {
-                ConfirmDialog.show('确定要删除这张图片吗？', () => {
-                    // 从数组中移除该路径
-                    const newPaths = imagePaths.filter((_, i) => i !== index);
-                    config.imagePaths = newPaths;
-                    api.updateImagePaths(newPaths);
-                    renderImageCard(newPaths);
-                });
-            });
-            container.appendChild(img);
-            imageCard.appendChild(container);
-        });
-    }
+    const paths = imagePaths || [];
 
-    // 添加图片按钮
+    // 创建工具栏
+    const toolbar = document.createElement('div');
+    toolbar.className = 'image-toolbar';
+
+    // 添加图片按钮（缩窄，左上角）
     const addBtn = document.createElement('button');
     addBtn.textContent = '添加图片';
     addBtn.className = 'add-image-btn';
     addBtn.addEventListener('click', async () => {
         const path = await api.selectImage();
         if (path) {
-            const newPaths = imagePaths ? [...imagePaths, path] : [path];
+            const newPaths = [...paths, path];
             config.imagePaths = newPaths;
             api.updateImagePaths(newPaths);
             renderImageCard(newPaths);
         }
     });
-    imageCard.appendChild(addBtn);
+
+    // -------------------- 双图标切换布局 --------------------
+    const toggleGroup = document.createElement('div');
+    toggleGroup.className = 'layout-toggle-group';
+
+    // 横向按钮（图标：☰ 表示三横线）
+    const btnRow = document.createElement('button');
+    btnRow.className = 'layout-toggle-btn';
+    btnRow.innerHTML = '☰';
+    btnRow.title = '横向布局（两列）';
+    if (imageLayout === 'row') btnRow.classList.add('active');
+    btnRow.addEventListener('click', () => {
+        if (imageLayout !== 'row') {
+            imageLayout = 'row';
+            renderImageCard(config.imagePaths || []);
+        }
+    });
+
+    // 纵向按钮（图标：⋮ 表示三竖点）
+    const btnColumn = document.createElement('button');
+    btnColumn.className = 'layout-toggle-btn';
+    btnColumn.innerHTML = '⋮';
+    btnColumn.title = '纵向布局（单列）';
+    if (imageLayout === 'column') btnColumn.classList.add('active');
+    btnColumn.addEventListener('click', () => {
+        if (imageLayout !== 'column') {
+            imageLayout = 'column';
+            renderImageCard(config.imagePaths || []);
+        }
+    });
+
+    toggleGroup.appendChild(btnRow);
+    toggleGroup.appendChild(btnColumn);
+
+    toolbar.appendChild(addBtn);
+    toolbar.appendChild(toggleGroup);
+    // --------------------------------------------------------
+
+    // 创建图片列表容器
+    const itemsContainer = document.createElement('div');
+    itemsContainer.className = 'image-items-container';
+
+    // 根据布局设置父容器类
+    imageCard.classList.remove('vertical', 'horizontal');
+    imageCard.classList.add(imageLayout === 'column' ? 'vertical' : 'horizontal');
+
+    // 填充图片项
+    paths.forEach((path, index) => {
+        const container = document.createElement('div');
+        container.className = 'image-item';
+        const img = document.createElement('img');
+        img.src = path;
+        img.alt = `图片${index + 1}`;
+        img.addEventListener('click', () => {
+            ConfirmDialog.show('确定要删除这张图片吗？', () => {
+                const newPaths = paths.filter((_, i) => i !== index);
+                config.imagePaths = newPaths;
+                api.updateImagePaths(newPaths);
+                renderImageCard(newPaths);
+            });
+        });
+        container.appendChild(img);
+        itemsContainer.appendChild(container);
+    });
+
+    imageCard.appendChild(toolbar);
+    imageCard.appendChild(itemsContainer);
 }
