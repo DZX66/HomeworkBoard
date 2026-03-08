@@ -32,6 +32,8 @@ class Config {
             debug: false,
             templates: {},
             imagePaths: [],              // 新增图片路径字段，默认为空
+            imageColumns: 3,          // 新增图片列数字段，默认为3列
+            imageMaxHeight: 400,      // 新增图片最大高度字段，默认为400px
         };
         let config = store.get('config');
         if (!config) {

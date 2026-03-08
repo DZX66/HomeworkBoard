@@ -725,7 +725,7 @@ function renderImageCard(imagePaths) {
     const toolbar = document.createElement('div');
     toolbar.className = 'image-toolbar';
 
-    // 添加图片按钮（缩窄，左上角）
+    // 添加图片按钮
     const addBtn = document.createElement('button');
     addBtn.textContent = '添加图片';
     addBtn.className = 'add-image-btn';
@@ -739,55 +739,65 @@ function renderImageCard(imagePaths) {
         }
     });
 
-    // -------------------- 双图标切换布局 --------------------
-    const toggleGroup = document.createElement('div');
-    toggleGroup.className = 'layout-toggle-group';
+    // 高度显示
+    const heightLabel = document.createElement('span');
 
-    // 横向按钮（图标：☰ 表示三横线）
-    const btnRow = document.createElement('button');
-    btnRow.className = 'layout-toggle-btn';
-    btnRow.innerHTML = '☰';
-    btnRow.title = '横向布局（两列）';
-    if (imageLayout === 'row') btnRow.classList.add('active');
-    btnRow.addEventListener('click', () => {
-        if (imageLayout !== 'row') {
-            imageLayout = 'row';
-            renderImageCard(config.imagePaths || []);
-        }
+    // 图片高度调整滑动条
+    const heightSlider = document.createElement('input');
+    heightSlider.type = 'range';
+    heightSlider.min = 100;
+    heightSlider.max = 1000;
+    heightSlider.step = 50;
+    heightSlider.value = config.imageMaxHeight || 400;
+    heightSlider.title = `图片高度: ${heightSlider.value}px`;
+    heightSlider.addEventListener('input', () => {
+        heightSlider.title = `图片高度: ${heightSlider.value}px`;
+        heightLabel.textContent = `图片高度: ${heightSlider.value}px`;
+    });
+    heightSlider.addEventListener('change', () => {
+        config.imageMaxHeight = parseInt(heightSlider.value, 10);
+        api.updateImageConfig({ imageMaxHeight: config.imageMaxHeight });
+        renderImageCard(config.imagePaths || []);
     });
 
-    // 纵向按钮（图标：⋮ 表示三竖点）
-    const btnColumn = document.createElement('button');
-    btnColumn.className = 'layout-toggle-btn';
-    btnColumn.innerHTML = '⋮';
-    btnColumn.title = '纵向布局（单列）';
-    if (imageLayout === 'column') btnColumn.classList.add('active');
-    btnColumn.addEventListener('click', () => {
-        if (imageLayout !== 'column') {
-            imageLayout = 'column';
-            renderImageCard(config.imagePaths || []);
-        }
-    });
+    // 高度显示
+    heightLabel.textContent = `图片高度: ${heightSlider.value}px`;
 
-    toggleGroup.appendChild(btnRow);
-    toggleGroup.appendChild(btnColumn);
+    // 列数切换按钮组
+    const columnGroup = document.createElement('div');
+    columnGroup.className = 'layout-toggle-group';
+
+    [1, 2, 3, 4].forEach((columns) => {
+        const btn = document.createElement('button');
+        btn.className = 'layout-toggle-btn';
+        btn.textContent = '⋮'.repeat(columns);
+        btn.title = `切换到 ${columns} 列布局`;
+        if (config.imageColumns === columns) btn.classList.add('active');
+        btn.addEventListener('click', () => {
+            if (config.imageColumns !== columns) {
+                config.imageColumns = columns;
+                api.updateImageConfig({ imageColumns: config.imageColumns });
+                renderImageCard(config.imagePaths || []);
+            }
+        });
+        columnGroup.appendChild(btn);
+    });
 
     toolbar.appendChild(addBtn);
-    toolbar.appendChild(toggleGroup);
-    // --------------------------------------------------------
+    toolbar.appendChild(heightSlider);
+    toolbar.appendChild(heightLabel);
+    toolbar.appendChild(columnGroup);
 
-    // 创建图片列表容器
+    // 图片列表容器
     const itemsContainer = document.createElement('div');
     itemsContainer.className = 'image-items-container';
+    itemsContainer.style.gridTemplateColumns = `repeat(${config.imageColumns || 3}, 1fr)`;
 
-    // 根据布局设置父容器类
-    imageCard.classList.remove('vertical', 'horizontal');
-    imageCard.classList.add(imageLayout === 'column' ? 'vertical' : 'horizontal');
-
-    // 填充图片项
     paths.forEach((path, index) => {
         const container = document.createElement('div');
         container.className = 'image-item';
+        container.style.maxHeight = `${config.imageMaxHeight || 400}px`;
+
         const img = document.createElement('img');
         img.src = path;
         img.alt = `图片${index + 1}`;
@@ -799,6 +809,7 @@ function renderImageCard(imagePaths) {
                 renderImageCard(newPaths);
             });
         });
+
         container.appendChild(img);
         itemsContainer.appendChild(container);
     });

@@ -515,4 +515,11 @@ ipcMain.on('update-image-paths', (event, paths) => {
     store.set('config', config);
     console.log("Updated image paths:", paths);
 });
+
+ipcMain.on('update-image-config', (event, { imageColumns, imageMaxHeight }) => {
+    if (imageColumns !== undefined) config.imageColumns = imageColumns;
+    if (imageMaxHeight !== undefined) config.imageMaxHeight = imageMaxHeight;
+    store.set('config', config);
+    console.log("Updated image config:", { imageColumns, imageMaxHeight });
+});
 }
