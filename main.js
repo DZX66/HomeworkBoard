@@ -6,6 +6,7 @@ import { exec } from 'child_process';
 import { fileURLToPath } from 'url';
 import pkg from 'sqlite3';
 import Config from './modules/config.js';
+import checkForUpdates from './modules/update_checker.js';
 
 const { verbose } = pkg;
 const sqlite3 = verbose();
@@ -294,6 +295,9 @@ if (!gotTheLock) {
 
       mainWindow.webContents.send('contentTmp', contentTemp);
 
+      // 发送版本号到渲染进程
+      mainWindow.webContents.send('app-version', app.getVersion());
+
       // mainWindow.show();
 
       lastTime = store.get('lastTime');
@@ -336,6 +340,9 @@ if (!gotTheLock) {
         });
       }, config.autoSaveGap * 60 * 1000);
 
+
+  // 检查更新
+  checkForUpdates(mainWindow);
     });
 
     mainWindow.loadFile('./pages/index/index.html');
@@ -364,6 +371,7 @@ if (!gotTheLock) {
     ipcMain.on('zoom', (event, zoom) => {
       mainWindow.webContents.setZoomFactor(zoom);
       config.zoom = zoom;
+      store.set('config', config);
     });
 
 
@@ -412,7 +420,7 @@ if (!gotTheLock) {
                 updateStmt.finalize();
               }
             );
-            mainWindow.webContents.send('message', "今日已保存（覆盖）。");
+            mainWindow.webContents.send('message', "今日已记录（覆盖）。");
           } else {
             // 不存在今日记录，执行INSERT
             const insertStmt = db.prepare(
@@ -430,7 +438,7 @@ if (!gotTheLock) {
                 insertStmt.finalize();
               }
             );
-            mainWindow.webContents.send('message', "今日已保存。");
+            mainWindow.webContents.send('message', "今日已记录。");
           }
         }
       );

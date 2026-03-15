@@ -24,4 +24,5 @@ contextBridge.exposeInMainWorld("api", {
     selectImage: () => ipcRenderer.invoke('select-image'),
     updateImagePaths: (paths) => ipcRenderer.send('update-image-paths', paths),
     updateImageConfig: (config) => ipcRenderer.send('update-image-config', config),
+    onAppVersion: (callback) => ipcRenderer.on("app-version", (_event, version) => callback(version)),
 })

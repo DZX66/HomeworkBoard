@@ -250,6 +250,17 @@ function createLineDOM(index, nodeI) {
 
     node.i = nodeI;
     if (nodeI == 0) { textarea.id = "subject-" + index; }
+    // textarea.addEventListener('keydown', (event) => {
+    // if (event.key === '(') {
+    //     event.preventDefault();
+    //     // 手动插入字符
+    //     const start = textarea.selectionStart;
+    //     const end = textarea.selectionEnd;
+    //     textarea.value = textarea.value.substring(0, start) + '(' + 
+    //                     textarea.value.substring(end);
+    //     textarea.selectionStart = textarea.selectionEnd = start + 1;
+    // }
+    // });
     textarea.addEventListener('input', (e) => {
         content[index][node.i] = textarea.value;
         // 检测中文左括号
@@ -739,6 +750,19 @@ function renderImageCard(imagePaths) {
         }
     });
 
+    // 删除所有图片按钮
+    const deleteAllBtn = document.createElement('button');
+    deleteAllBtn.textContent = '🗑️';
+    deleteAllBtn.className = 'delete-all-btn';
+    deleteAllBtn.title = '删除所有图片';
+    deleteAllBtn.addEventListener('click', () => {
+        ConfirmDialog.show('确定要删除所有图片吗？', () => {
+            config.imagePaths = [];
+            api.updateImagePaths([]);
+            renderImageCard([]);
+        });
+    });
+
     // 高度显示
     const heightLabel = document.createElement('span');
 
@@ -746,7 +770,7 @@ function renderImageCard(imagePaths) {
     const heightSlider = document.createElement('input');
     heightSlider.type = 'range';
     heightSlider.min = 100;
-    heightSlider.max = 1000;
+    heightSlider.max = 1400;
     heightSlider.step = 50;
     heightSlider.value = config.imageMaxHeight || 400;
     heightSlider.title = `图片高度: ${heightSlider.value}px`;
@@ -754,14 +778,14 @@ function renderImageCard(imagePaths) {
         heightSlider.title = `图片高度: ${heightSlider.value}px`;
         heightLabel.textContent = `图片高度: ${heightSlider.value}px`;
     });
-    heightSlider.addEventListener('change', () => {
+    heightSlider.addEventListener('input', () => {
         config.imageMaxHeight = parseInt(heightSlider.value, 10);
         api.updateImageConfig({ imageMaxHeight: config.imageMaxHeight });
         renderImageCard(config.imagePaths || []);
     });
 
     // 高度显示
-    heightLabel.textContent = `图片高度: ${heightSlider.value}px`;
+    heightLabel.textContent = `图片最大高度: ${heightSlider.value}px`;
 
     // 列数切换按钮组
     const columnGroup = document.createElement('div');
@@ -783,9 +807,14 @@ function renderImageCard(imagePaths) {
         columnGroup.appendChild(btn);
     });
 
+    const rightControls = document.createElement('div');
+    rightControls.className = 'right-controls';
+    rightControls.appendChild(heightLabel);
+    rightControls.appendChild(heightSlider);
+    rightControls.appendChild(deleteAllBtn);
+
     toolbar.appendChild(addBtn);
-    toolbar.appendChild(heightSlider);
-    toolbar.appendChild(heightLabel);
+    toolbar.appendChild(rightControls);
     toolbar.appendChild(columnGroup);
 
     // 图片列表容器
@@ -800,7 +829,7 @@ function renderImageCard(imagePaths) {
 
         const img = document.createElement('img');
         img.src = path;
-        img.alt = `图片${index + 1}`;
+        img.alt = `图片无法显示: ${path}`;
         img.addEventListener('click', () => {
             ConfirmDialog.show('确定要删除这张图片吗？', () => {
                 const newPaths = paths.filter((_, i) => i !== index);
@@ -817,3 +846,7 @@ function renderImageCard(imagePaths) {
     imageCard.appendChild(toolbar);
     imageCard.appendChild(itemsContainer);
 }
+
+api.onAppVersion((version) => {
+    document.getElementById('version').textContent = `v${version}`;
+});
