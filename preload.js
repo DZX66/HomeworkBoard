@@ -25,4 +25,10 @@ contextBridge.exposeInMainWorld("api", {
     updateImagePaths: (paths) => ipcRenderer.send('update-image-paths', paths),
     updateImageConfig: (config) => ipcRenderer.send('update-image-config', config),
     onAppVersion: (callback) => ipcRenderer.on("app-version", (_event, version) => callback(version)),
+    setUnsaved: (value) => ipcRenderer.send("set-unsaved", value),
+    setRenderUnsaved: (callback) => { ipcRenderer.on("set-render-unsaved", (_event, value) => { callback(value) }) },
+    // 天气相关API
+    onWeatherData: (callback) => { ipcRenderer.on("weather-data", (_event, value) => { callback(value) }) },
+    refreshWeather: () => { ipcRenderer.send("refresh-weather") },
+    openWeatherBrowser: (url) => { ipcRenderer.send("open-weather-browser", url) }
 })

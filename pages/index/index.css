@@ -649,27 +649,224 @@ textarea:focus {
     white-space: nowrap;
 }
 
-/* -------------------- 响应式调整 -------------------- */
-@media (max-width: 768px) {
-    .container {
-        grid-template-columns: 1fr;
-    }
 
-    .left-panel {
-        position: static;
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .info-card {
-        flex: 1;
-        min-width: 200px;
-    }
+/* ==================== 天气卡片样式 ==================== */
+.weather-card {
+    padding: 0.8rem;
+    transition: all 0.2s;
 }
 
-@media (max-width: 480px) {
-    .image-card.horizontal .image-item {
-        width: 100%;
-    }
+.weather-card .weather-loading,
+.weather-card .weather-error {
+    text-align: center;
+    padding: 1rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.weather-card .weather-error button {
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* 当前天气 */
+.weather-current {
+    text-align: center;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 0.8rem;
+}
+
+.weather-location {
+    font-size: 1.1rem;
+    color: #666;
+}
+
+.weather-temp {
+    font-size: 3.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.weather-desc {
+    font-size: 1.3rem;
+    color: #666;
+}
+
+.weather-detail {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 1.75rem;
+    color: #888;
+    margin-top: 1rem;
+}
+
+/* 小时预报区域 */
+.weather-hourly-section,
+.weather-daily-section {
+    margin-bottom: 0.8rem;
+}
+
+.weather-section-title {
+    font-size: 1.05rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    padding-left: 0.2rem;
+}
+
+.weather-hourly-list {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding-bottom: 0.3rem;
+    scrollbar-width: thin;
+}
+
+.weather-hourly-list::-webkit-scrollbar {
+    height: 3px;
+}
+
+.weather-hourly-list::-webkit-scrollbar-track {
+    background: #e0e0e0;
+    border-radius: 2px;
+}
+
+.weather-hourly-list::-webkit-scrollbar-thumb {
+    background: #aaa;
+    border-radius: 2px;
+}
+
+.hourly-item {
+    flex: 0 0 auto;
+    text-align: center;
+    background: #f0f0f0;
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    min-width: 55px;
+}
+
+.hourly-time {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.hourly-icon {
+    font-size: 1.6rem;
+}
+
+.hourly-temp {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.hourly-precip {
+    font-size: 0.95rem;
+    color: #3498db;
+}
+
+/* 小时天气 */
+.weather-daily-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.daily-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.4rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.daily-weekday {
+    width: 2.2rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.daily-icon {
+    font-size: 1.4rem;
+    width: 1.6rem;
+    text-align: center;
+}
+
+.daily-temp {
+    flex: 1;
+    font-size: 1.4rem;
+    color: #666;
+}
+
+.daily-weather {
+    font-size: 1.15rem;
+    color: #888;
+    width: 2.5rem;
+    text-align: right;
+}
+
+/* 底部栏 */
+.weather-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.6rem;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 0.2rem;
+}
+
+.weather-update-info {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.weather-update-time {
+    font-size: 0.7rem;
+    color: #888;
+}
+
+.weather-refresh-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0.2rem;
+    border-radius: 4px;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.weather-refresh-btn:hover {
+    background: #e0e0e0;
+    transform: rotate(180deg);
+}
+
+.weather-more-btn {
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    color: #666;
+    transition: all 0.2s;
+    font-weight: bold;
+}
+
+.weather-more-btn:hover {
+    background: #e0e0e0;
+}
+
+.weather-empty {
+    text-align: center;
+    padding: 0.5rem;
+    color: #999;
+    font-size: 0.75rem;
 }

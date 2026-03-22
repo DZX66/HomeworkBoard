@@ -9,7 +9,20 @@ let config = null;
 let lastTime = null;
 let msgHistory = [];
 let imageLayout = 'column'; // 'column' 或 'row'
+let unsaved = false;
+let weatherData = null;
+let weatherCard = null;
 
+function setUnsaved(value) {
+    unsaved = value;
+    api.setUnsaved(value);
+    document.title = config.title + (unsaved ? " *" : "");
+}
+
+api.setRenderUnsaved((value) => {
+    unsaved = value;
+    document.title = config.title + (unsaved ? " *" : "");
+});
 
 // 模块化编辑对话框
 const EditDialog = (() => {
@@ -171,9 +184,23 @@ api.config((_config) => {
         }, 0);
 
     });
-    // 新增：初始化图片卡片
-    let imagePaths = config.imagePaths;
-    renderImageCard(imagePaths || []);
+    // 初始化图片卡片
+    if (config.imageEnable) {
+        let imagePaths = config.imagePaths;
+        renderImageCard(imagePaths || []);
+    } else {
+        document.getElementById('image-card').style.display = 'none';
+    }
+
+    if (config.weatherEnable) {
+        initWeatherCard();
+        api.onWeatherData(handleWeatherData);
+        // 请求初始天气数据（主进程会自动获取，但为了确保，可以手动请求一次）
+        setTimeout(() => api.refreshWeather(), 500);
+    } else {
+        const weatherCard = document.querySelector('.weather-card');
+        if (weatherCard) weatherCard.style.display = 'none';
+    }
 });
 
 /**
@@ -263,6 +290,7 @@ function createLineDOM(index, nodeI) {
     // });
     textarea.addEventListener('input', (e) => {
         content[index][node.i] = textarea.value;
+        setUnsaved(true); // 设置为未保存状态
         // 检测中文左括号
         const cursorPos = textarea.selectionStart;
         if (cursorPos > 0 && textarea.value[cursorPos - 1] === "（") {
@@ -303,6 +331,12 @@ function createLineDOM(index, nodeI) {
         triggerCoplit(index, node);
     });
     textarea.addEventListener('blur', () => {
+        if (textarea.value.trim() === "" && content[index].length > 1) {
+            node.remove();
+            content[index].splice(node.i, 1);
+            const event = new CustomEvent('delete', { detail: { index: index, i: node.i } });
+            document.dispatchEvent(event);
+        }
         hideCoplit();
     });
     textarea.addEventListener('input', () => autoResize(textarea));
@@ -850,3 +884,236 @@ function renderImageCard(imagePaths) {
 api.onAppVersion((version) => {
     document.getElementById('version').textContent = `v${version}`;
 });
+
+// ==================== 天气功能 ====================
+
+function initWeatherCard() {
+    const leftPanel = document.querySelector('.left-panel');
+    if (!leftPanel) return;
+    
+    // 检查是否已存在
+    if (document.querySelector('.weather-card')) return;
+    
+    weatherCard = document.createElement('div');
+    weatherCard.className = 'info-card weather-card';
+    weatherCard.innerHTML = `
+        <div class="weather-loading">加载天气中...</div>
+    `;
+    leftPanel.appendChild(weatherCard);
+}
+
+function handleWeatherData(data) {
+    if (!weatherCard) {
+        initWeatherCard();
+        weatherCard = document.querySelector('.weather-card');
+    }
+    
+    if (data.error) {
+        weatherCard.innerHTML = `
+            <div class="weather-error">
+                天气加载失败<br>
+                <small>${data.error}</small>
+                <button class="weather-refresh-btn" onclick="api.refreshWeather()">重试</button>
+            </div>
+        `;
+        return;
+    }
+    
+    weatherData = data;
+    renderWeatherCard(data);
+}
+
+function renderWeatherCard(data) {
+    if (!weatherCard) return;
+    
+    const { hourlyForecast, dailyForecast, updateTime, currentWeather, position } = data;
+    
+    // 获取配置
+    const forecastHours = config.weatherForecastHours || 8;
+    const forecastDays = config.weatherForecastDays || 3;
+    const skipMidnight = config.weatherSkipMidnightHours !== false;
+    
+    // 处理小时预报
+    let filteredHours = [];
+    if (hourlyForecast && hourlyForecast.length > 0) {
+        // 按时间排序
+        const sorted = [...hourlyForecast].sort((a, b) => parseInt(a.hour) - parseInt(b.hour));
+        
+        // 获取当前时间
+        const now = new Date();
+        const currentHour = now.getHours();
+        
+        // 过滤并获取未来小时
+        let foundCurrent = false;
+        for (const item of sorted) {
+            const hourStr = item.hour;
+            // hour 格式如 "2026032122"
+            if (hourStr && hourStr.length >= 10) {
+                const itemHour = parseInt(hourStr.substring(8, 10));
+                if (!foundCurrent) {
+                    if (itemHour >= currentHour) {
+                        foundCurrent = true;
+                    } else {
+                        continue;
+                    }
+                }
+                // 跳过午夜时段
+                if (skipMidnight && (itemHour >= 23 || itemHour <= 5)) {
+                    continue;
+                }
+                filteredHours.push(item);
+                if (filteredHours.length >= forecastHours) break;
+            }
+        }
+    }
+    
+    // 处理天数预报
+    let filteredDays = [];
+    if (dailyForecast && dailyForecast.length > 0) {
+        const today = new Date().toISOString().slice(0, 10);
+        const sortedDays = [...dailyForecast].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        
+        let foundToday = false;
+        for (const day of sortedDays) {
+            if (!foundToday) {
+                if (day.date === today) {
+                    foundToday = true;
+                } else {
+                    continue;
+                }
+            }
+            filteredDays.push(day);
+            if (filteredDays.length >= forecastDays) break;
+        }
+    }
+    
+    // 构建HTML
+    const formatTime = (timeStr) => {
+        if (!timeStr) return '未知';
+        const date = new Date(timeStr);
+        if (isNaN(date.getTime())) return timeStr.substring(11, 16);
+        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    };
+    
+    const getWeekday = (dateStr) => {
+        const date = new Date(dateStr);
+        const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+        return weekdays[date.getDay()];
+    };
+    
+    const getWeatherIcon = (weatherText) => {
+        if (!weatherText) return '☁️';
+        if (weatherText.includes('晴')) return '☀️';
+        if (weatherText.includes('多云')) return '⛅';
+        if (weatherText.includes('阴')) return '☁️';
+        if (weatherText.includes('雨')) return '🌧️';
+        if (weatherText.includes('雪')) return '❄️';
+        return '🌡️';
+    };
+    
+    // 构建小时预报HTML
+    let hourlyHtml = '';
+    if (filteredHours.length > 0) {
+        hourlyHtml = `
+            <div class="weather-hourly-section">
+                <div class="weather-section-title">⏰ 小时预报</div>
+                <div class="weather-hourly-list">
+                    ${filteredHours.map(item => {
+                        const hourStr = item.hour;
+                        let timeLabel = '';
+                        if (hourStr && hourStr.length >= 10) {
+                            const h = parseInt(hourStr.substring(8, 10));
+                            timeLabel = `${h.toString().padStart(2, '0')}:00`;
+                        }
+                        const temp = item.temperature || '--';
+                        const precipProb = item.precipitation_probability !== undefined ? item.precipitation_probability : 
+                                          (item.precipitation && item.precipitation !== '0.0' ? '--' : '0');
+                        const weather = item.weather || '';
+                        return `
+                            <div class="hourly-item">
+                                <div class="hourly-time">${timeLabel}</div>
+                                <div class="hourly-icon">${getWeatherIcon(weather)}</div>
+                                <div class="hourly-temp">${temp}°</div>
+                                <div class="hourly-precip">${precipProb}%</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    } else {
+        hourlyHtml = `<div class="weather-hourly-section"><div class="weather-section-title">⏰ 小时预报</div><div class="weather-empty">暂无数据</div></div>`;
+    }
+    
+    // 构建天数预报HTML
+    let dailyHtml = '';
+    if (filteredDays.length > 0) {
+        dailyHtml = `
+            <div class="weather-daily-section">
+                <div class="weather-section-title">📅 天气预报</div>
+                <div class="weather-daily-list">
+                    ${filteredDays.map((day, index) => {
+                        const dateStr = day.date;
+                        const weekday = index === 0 ? '今天' : getWeekday(dateStr);
+                        const weatherDay = day.weather_day || day.weather || '';
+                        const tempDay = day.temperature_day || '--';
+                        const tempNight = day.temperature_night || '--';
+                        const tempRange = `${tempNight}°~${tempDay}°`;
+                        return `
+                            <div class="daily-item">
+                                <div class="daily-weekday">${weekday}</div>
+                                <div class="daily-icon">${getWeatherIcon(weatherDay)}</div>
+                                <div class="daily-temp">${tempRange}</div>
+                                <div class="daily-weather">${weatherDay}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    } else {
+        dailyHtml = `<div class="weather-daily-section"><div class="weather-section-title">📅 天气预报</div><div class="weather-empty">暂无数据</div></div>`;
+    }
+    
+    // 底部栏HTML
+    const updateTimeStr = updateTime ? formatTime(updateTime) : '未知';
+    const locationName = position && position.city ? position.city : '';
+    
+    weatherCard.innerHTML = `
+        <div class="weather-current" style="display: ${currentWeather ? 'flex' : 'none'}">
+            ${currentWeather ? `
+                <div class="weather-location">${locationName}</div>
+                <div class="weather-temp">${currentWeather.temperature || '--'}°</div>
+                <div class="weather-desc">${currentWeather.weather || ''}</div>
+                <div class="weather-detail">
+                    <span>💧 ${currentWeather.humidity || '--'}%</span>
+                    <span>🌬️ ${currentWeather.wind_direction || ''} ${currentWeather.wind_power || ''}</span>
+                </div>
+            ` : ''}
+        </div>
+        ${hourlyHtml}
+        ${dailyHtml}
+        <div class="weather-footer">
+            <div class="weather-update-info">
+                <span class="weather-update-time">🕐 ${updateTimeStr}更新</span>
+                <button class="weather-refresh-btn" id="weather-refresh-btn">🔄</button>
+            </div>
+            <div class="weather-more-btn" id="weather-more-btn">⋮</div>
+        </div>
+    `;
+    
+    // 绑定事件
+    const refreshBtn = weatherCard.querySelector('#weather-refresh-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            api.refreshWeather();
+        });
+    }
+    
+    const moreBtn = weatherCard.querySelector('#weather-more-btn');
+    if (moreBtn) {
+        moreBtn.addEventListener('click', () => {
+            api.openWeatherBrowser(config.weatherOpenBrowserURL);
+        });
+    }
+}

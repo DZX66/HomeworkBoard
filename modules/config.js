@@ -20,7 +20,18 @@ class Config {
                 autoSaveGap: 1,
                 debug: 1,
                 templates: 1,
-                image: 1,               // 新增图片配置版本
+                imagePaths: 1,
+                imageColumns: 1,
+                imageMaxHeight: 1,
+                imageEnable: 1,
+                weatherEnable: 1,
+                weatherDataURL: 1,
+                weatherForecastDays: 1,
+                weatherForecastHours: 1,
+                weatherSkipMidnightHours: 1,
+                weatherOpenBrowserURL: 1,
+                weatherAutoRefreshGap: 1,
+                checkVersion: 1,
             },
             subjects: ["语文", "数学", "英语", "物理", "化学", "生物", "政治", "历史", "地理", "信息", "通用"],
             title: "HomeworkBoard",
@@ -31,9 +42,18 @@ class Config {
             autoSaveGap: 10,
             debug: false,
             templates: {},
-            imagePaths: [],              // 新增图片路径字段，默认为空
-            imageColumns: 3,          // 新增图片列数字段，默认为3列
-            imageMaxHeight: 400,      // 新增图片最大高度字段，默认为400px
+            imagePaths: [],              // 图片路径字段，默认为空
+            imageColumns: 3,          // 图片列数字段，默认为3列
+            imageMaxHeight: 400,      // 图片最大高度字段，默认为400px
+            imageEnable: true,
+            weatherEnable: true,
+            weatherDataURL: 'https://weathernew.pae.baidu.com/weathernew/pc?query=%E6%B8%A9%E5%B7%9E%E4%B9%90%E6%B8%85%E5%A4%A9%E6%B0%94&srcid=4982',
+            weatherForecastDays: 3,
+            weatherForecastHours: 8,
+            weatherSkipMidnightHours: true,
+            weatherOpenBrowserURL: "",
+            weatherAutoRefreshGap: 30,
+            checkVersion: true,
         };
         let config = store.get('config');
         if (!config) {

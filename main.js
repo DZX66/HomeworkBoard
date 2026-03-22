@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, clipboard, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, clipboard, dialog, shell } from 'electron';
 import Store from 'electron-store';
 import fs from 'fs';
 import path from 'path';
@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import pkg from 'sqlite3';
 import Config from './modules/config.js';
 import checkForUpdates from './modules/update_checker.js';
+import getWeatherData from './modules/weather.js';
 
 const { verbose } = pkg;
 const sqlite3 = verbose();
@@ -48,6 +49,7 @@ if (!gotTheLock) {
   let mainWindow = null;
   let config = Config.init();
   let db = null;
+  let unsaved = false;
 
 
 
@@ -79,6 +81,20 @@ if (!gotTheLock) {
     {
       label: '文件',
       submenu: [
+        {
+          label: '保存',
+          click: () => {
+            if (!unsaved) return;
+            mainWindow.webContents.send('saveTmp');
+            ipcMain.once("saveTmpRes", (event, res) => {
+              console.log(res);
+              store.set('contentTemp', res);
+              mainWindow.webContents.send('message', "保存成功。");
+              mainWindow.webContents.send('set-render-unsaved', false);
+              unsaved = false;
+            });
+          }
+        },
         {
           label: '打开用户目录',
           click: () => {
@@ -243,9 +259,9 @@ if (!gotTheLock) {
       label: '关于',
       submenu: [
         {
-          label: 'github',
+          label: 'Github',
           click: () => {
-            exec(`start https://github.com/DZX66/HomeworkBoard`);
+            shell.openExternal("https://github.com/DZX66/HomeworkBoard");
           }
         }
       ]
@@ -332,17 +348,43 @@ if (!gotTheLock) {
 
 
       setInterval(() => {
+        if (!unsaved) return;
         mainWindow.webContents.send('saveTmp');
         ipcMain.once("saveTmpRes", (event, res) => {
           console.log(res);
           store.set('contentTemp', res);
           mainWindow.webContents.send('message', "自动保存成功。");
+          mainWindow.webContents.send('set-render-unsaved', false);
+          unsaved = false;
         });
       }, config.autoSaveGap * 60 * 1000);
 
 
-  // 检查更新
-  checkForUpdates(mainWindow);
+      // 检查更新
+      if (config.checkVersion) {
+        checkForUpdates(mainWindow);
+      }
+
+      if (config.weatherEnable) {
+        getWeatherData(mainWindow, config.weatherDataURL);
+        ipcMain.on('refresh-weather', () => {
+          console.log('Refreshing weather...');
+          getWeatherData(mainWindow, config.weatherDataURL);
+        });
+
+        ipcMain.on('open-weather-browser', (event, url) => {
+          if (url) {
+            shell.openExternal(url);
+          } else {
+            shell.openExternal(config.weatherDataURL);
+          }
+        });
+
+        setInterval(() => {
+          console.log('Automatically refreshing weather...');
+          getWeatherData(mainWindow, config.weatherDataURL);
+        }, config.weatherAutoRefreshGap * 60 * 1000);
+      }
     });
 
     mainWindow.loadFile('./pages/index/index.html');
@@ -374,6 +416,9 @@ if (!gotTheLock) {
       store.set('config', config);
     });
 
+    ipcMain.on("set-unsaved", (event, value) => {
+      unsaved = value;
+    });
 
     ipcMain.on("saveRes", (event, res) => {
       console.log(res);
@@ -518,16 +563,16 @@ if (!gotTheLock) {
   });
 
 
-ipcMain.on('update-image-paths', (event, paths) => {
+  ipcMain.on('update-image-paths', (event, paths) => {
     config.imagePaths = paths;
     store.set('config', config);
     console.log("Updated image paths:", paths);
-});
+  });
 
-ipcMain.on('update-image-config', (event, { imageColumns, imageMaxHeight }) => {
+  ipcMain.on('update-image-config', (event, { imageColumns, imageMaxHeight }) => {
     if (imageColumns !== undefined) config.imageColumns = imageColumns;
     if (imageMaxHeight !== undefined) config.imageMaxHeight = imageMaxHeight;
     store.set('config', config);
     console.log("Updated image config:", { imageColumns, imageMaxHeight });
-});
+  });
 }
