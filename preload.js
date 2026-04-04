@@ -30,5 +30,11 @@ contextBridge.exposeInMainWorld("api", {
     // 天气相关API
     onWeatherData: (callback) => { ipcRenderer.on("weather-data", (_event, value) => { callback(value) }) },
     refreshWeather: () => { ipcRenderer.send("refresh-weather") },
-    openWeatherBrowser: (url) => { ipcRenderer.send("open-weather-browser", url) }
+    openWeatherBrowser: (url) => { ipcRenderer.send("open-weather-browser", url) },
+
+    // 配置页面相关API
+    onConfigData: (callback) => { ipcRenderer.on("config-data", (_event, value) => { callback(value) }) },
+    saveConfigAndRestart: (config) => { ipcRenderer.send("save-config-and-restart", config) },
+    closeConfigWindow: () => { ipcRenderer.send("close-config-window") },
+    openConfigWindow: () => { ipcRenderer.send("open-config-window") },
 })

@@ -32,6 +32,7 @@ class Config {
                 weatherOpenBrowserURL: 1,
                 weatherAutoRefreshGap: 1,
                 checkVersion: 1,
+                alwaysFill: 1,
             },
             subjects: ["语文", "数学", "英语", "物理", "化学", "生物", "政治", "历史", "地理", "信息", "通用"],
             title: "HomeworkBoard",
@@ -49,11 +50,12 @@ class Config {
             weatherEnable: true,
             weatherDataURL: 'https://weathernew.pae.baidu.com/weathernew/pc?query=%E6%B8%A9%E5%B7%9E%E4%B9%90%E6%B8%85%E5%A4%A9%E6%B0%94&srcid=4982',
             weatherForecastDays: 3,
-            weatherForecastHours: 8,
+            weatherForecastHours: 5,
             weatherSkipMidnightHours: true,
             weatherOpenBrowserURL: "",
-            weatherAutoRefreshGap: 30,
+            weatherAutoRefreshGap: 5,
             checkVersion: true,
+            alwaysFill: false,             // 是否总是填充作业内容，默认为false
         };
         let config = store.get('config');
         if (!config) {

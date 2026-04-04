@@ -870,3 +870,110 @@ textarea:focus {
     color: #999;
     font-size: 0.75rem;
 }
+
+/* ==================== 新版实时天气布局 ==================== */
+.weather-card .weather-current {
+    text-align: left;
+    padding-bottom: 0.5rem;
+}
+
+.weather-card .weather-location {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: #666;
+    text-align: center;
+}
+
+.weather-card .weather-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.weather-card .weather-temp {
+    font-size: 3rem;
+    font-weight: bold;
+    margin: 0;
+    color: #2c3e50;
+    line-height: 1;
+}
+
+.weather-card .weather-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    text-align: right;
+}
+
+.weather-card .weather-desc-item,
+.weather-card .weather-humidity-item,
+.weather-card .weather-wind-item {
+    font-size: 1rem;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.3rem;
+}
+
+.weather-card .weather-icon {
+    font-size: 1.2rem;
+}
+
+/* 小屏幕适配 */
+@media (max-width: 600px) {
+    .weather-card .weather-main {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .weather-card .weather-info {
+        text-align: left;
+        flex-direction: row;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    .weather-card .weather-desc-item,
+    .weather-card .weather-humidity-item,
+    .weather-card .weather-wind-item {
+        white-space: normal;
+    }
+}
+
+/* 跳过夜间时显示分隔线 */
+.weather-hourly-list {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding-bottom: 0.3rem;
+    scrollbar-width: thin;
+    align-items: center;
+}
+
+/* 分隔线样式 */
+.hourly-divider {
+    flex: 0 0 auto;
+    width: 2px;
+    height: 50px;
+    background: linear-gradient(to bottom, transparent, #ccc, transparent);
+    margin: 0 0.2rem;
+    align-self: center;
+}
+
+/* 夜间图标样式 */
+.weather-icon.night-clear {
+    position: relative;
+    display: inline-block;
+}
+
+/* 月亮图标动画效果 */
+@keyframes moonGlow {
+    0% { text-shadow: 0 0 2px rgba(255, 255, 200, 0.5); }
+    100% { text-shadow: 0 0 8px rgba(255, 255, 200, 0.8); }
+}
+
+.night-clear-icon {
+    animation: moonGlow 2s ease-in-out infinite alternate;
+}

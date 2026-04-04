@@ -47,6 +47,7 @@ if (!gotTheLock) {
    * @type {BrowserWindow}
    */
   let mainWindow = null;
+  let configWindow = null;
   let config = Config.init();
   let db = null;
   let unsaved = false;
@@ -89,6 +90,7 @@ if (!gotTheLock) {
             ipcMain.once("saveTmpRes", (event, res) => {
               console.log(res);
               store.set('contentTemp', res);
+              store.set('tmpTime', new Date().toISOString());
               mainWindow.webContents.send('message', "保存成功。");
               mainWindow.webContents.send('set-render-unsaved', false);
               unsaved = false;
@@ -150,6 +152,12 @@ if (!gotTheLock) {
         },
         { type: 'separator' },
         {
+          label: '配置...',
+          click: () => {
+            openConfigWindow();
+          }
+        },
+        {
           label: '退出',
           click: () => app.quit() // 点击事件
         }
@@ -162,13 +170,23 @@ if (!gotTheLock) {
           label: '清空', click: () => {
             mainWindow.webContents.send('clear');
             Menu.getApplicationMenu().getMenuItemById("undoClear").enabled = true;
+            unsaved = true;
+            mainWindow.webContents.send('set-render-unsaved', true);
           }
         },
         {
           label: '撤销清空', click: () => {
             mainWindow.webContents.send('undoClear');
             Menu.getApplicationMenu().getMenuItemById("undoClear").enabled = false;
+            unsaved = true;
+            mainWindow.webContents.send('set-render-unsaved', true);
           }, enabled: false, id: "undoClear"
+        },
+        {
+          label: '填充临时保存',
+          click: () => {
+            mainWindow.webContents.send('contentTmp', contentTemp);
+          }
         },
         { type: 'separator' },
         { label: '修改标题...', click: () => mainWindow.webContents.send('editCaption') },
@@ -289,7 +307,48 @@ if (!gotTheLock) {
     checkTime();
   }
 
+  function openConfigWindow() {
+    if (configWindow) {
+      configWindow.focus();
+      return;
+    }
 
+    configWindow = new BrowserWindow({
+      width: 1000,
+      height: 700,
+      show: false,
+      parent: mainWindow,
+      modal: true,
+      maximizable: false,
+      minimizable: false,
+      resizable: true,
+      autoHideMenuBar: true,
+      webPreferences: {
+        nodeIntegration: true,
+        preload: path.resolve(__dirname, './preload.js'),
+        spellcheck: false,
+      }
+    });
+
+    configWindow.loadFile('./pages/config/index.html');
+
+    if (DEBUG) {
+      configWindow.webContents.openDevTools({ mode: 'bottom' });
+    }
+
+    configWindow.once('ready-to-show', () => {
+      // 发送当前配置数据
+      configWindow.webContents.send('config-data', config);
+      configWindow.show();
+    });
+
+    configWindow.once('closed', () => {
+      configWindow = null;
+      // 移除相关监听器
+      ipcMain.removeAllListeners('save-config-and-restart');
+      ipcMain.removeAllListeners('close-config-window');
+    });
+  }
 
 
   app.on('ready', () => {
@@ -309,7 +368,22 @@ if (!gotTheLock) {
     mainWindow.once('ready-to-show', () => {
       mainWindow.webContents.send('config', config);
 
-      mainWindow.webContents.send('contentTmp', contentTemp);
+      if (config.alwaysFill) {
+        mainWindow.webContents.send('contentTmp', contentTemp);
+      } else {
+        let tmpTime = store.get('tmpTime');
+        if (tmpTime) {
+          let now = new Date();
+          let tmpDate = new Date(tmpTime);
+          if (now.getFullYear() === tmpDate.getFullYear() && now.getMonth() === tmpDate.getMonth() && now.getDate() === tmpDate.getDate()) {
+            mainWindow.webContents.send('contentTmp', contentTemp);
+          } else {
+            mainWindow.webContents.send('contentTmp', Array.from({ length: config.subjects.length }, () => [""]));
+          }
+        } else {
+          mainWindow.webContents.send('contentTmp', Array.from({ length: config.subjects.length }, () => [""]));
+        }
+      }
 
       // 发送版本号到渲染进程
       mainWindow.webContents.send('app-version', app.getVersion());
@@ -353,6 +427,7 @@ if (!gotTheLock) {
         ipcMain.once("saveTmpRes", (event, res) => {
           console.log(res);
           store.set('contentTemp', res);
+          store.set('tmpTime', new Date().toISOString());
           mainWindow.webContents.send('message', "自动保存成功。");
           mainWindow.webContents.send('set-render-unsaved', false);
           unsaved = false;
@@ -396,6 +471,7 @@ if (!gotTheLock) {
       ipcMain.once("saveTmpRes", (event, res) => {
         console.log(res);
         store.set('contentTemp', res);
+        store.set('tmpTime', new Date().toISOString());
         store.set('config', config);
         app.quit();
       });
@@ -574,5 +650,39 @@ if (!gotTheLock) {
     if (imageMaxHeight !== undefined) config.imageMaxHeight = imageMaxHeight;
     store.set('config', config);
     console.log("Updated image config:", { imageColumns, imageMaxHeight });
+  });
+
+  // 打开配置窗口
+  ipcMain.on('open-config-window', () => {
+    openConfigWindow();
+  });
+
+  // 关闭配置窗口
+  ipcMain.on('close-config-window', () => {
+    if (configWindow) {
+      configWindow.close();
+    }
+  });
+
+  // 保存配置并重启
+  ipcMain.on('save-config-and-restart', (event, newConfig) => {
+    // 合并配置，保留版本信息
+    const oldVersion = config.version;
+    const mergedConfig = { ...newConfig, version: oldVersion };
+
+    // 保存配置
+    store.set('config', mergedConfig);
+
+    // 更新内存中的配置
+    config = mergedConfig;
+
+    // 通知配置窗口关闭
+    if (configWindow) {
+      configWindow.close();
+    }
+
+    // 重启应用
+    app.relaunch();
+    app.exit(0);
   });
 }

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应用配置</title>
+    <link rel="stylesheet" href="./config.css">
+</head>
+<body>
+    <div class="config-container">
+        <div class="config-header">
+            <h1>应用配置</h1>
+            <p class="config-note">修改配置后需要重启应用才能生效</p>
+        </div>
+
+        <div class="config-content">
+            <!-- 基础设置 -->
+            <div class="config-section">
+                <h2>基础设置</h2>
+                <div class="config-item">
+                    <label for="title">应用标题</label>
+                    <input type="text" id="title" placeholder="应用标题">
+                    <span class="desc">窗口标题栏显示的文字</span>
+                </div>
+                <div class="config-item">
+                    <label for="caption">作业清单标题</label>
+                    <input type="text" id="caption" placeholder="作业清单标题">
+                    <span class="desc">主界面显示的标题</span>
+                </div>
+                <div class="config-item">
+                    <label for="zoom">界面缩放比例</label>
+                    <input type="number" id="zoom" step="0.1" min="0.5" max="2.0">
+                    <span class="desc">0.5 - 2.0，默认1.0</span>
+                </div>
+            </div>
+
+            <!-- 学科设置 -->
+            <div class="config-section">
+                <h2>学科设置</h2>
+                <div class="config-item config-item-full">
+                    <label>学科列表</label>
+                    <div class="subjects-editor">
+                        <div class="subjects-list" id="subjects-list"></div>
+                        <div class="subjects-add">
+                            <input type="text" id="new-subject" placeholder="新学科名称">
+                            <button id="add-subject-btn" class="btn-secondary">添加</button>
+                        </div>
+                    </div>
+                    <span class="desc">每行一个学科，拖拽可调整顺序</span>
+                </div>
+            </div>
+
+            <!-- 自动保存设置 -->
+            <div class="config-section">
+                <h2>自动保存设置</h2>
+                <div class="config-item">
+                    <label for="auto-save-gap">自动保存间隔（分钟）</label>
+                    <input type="number" id="auto-save-gap" step="1" min="1" max="60">
+                    <span class="desc">每隔多少分钟自动保存一次</span>
+                </div>
+                <div class="config-item config-item-full">
+                    <label>定时保存时间点（24小时制）</label>
+                    <div class="save-times-editor">
+                        <div class="save-times-list" id="save-times-list"></div>
+                        <div class="save-times-add">
+                            <input type="number" id="new-save-hour" placeholder="时" min="0" max="23" style="width:60px">
+                            <span>:</span>
+                            <input type="number" id="new-save-minute" placeholder="分" min="0" max="59" style="width:60px">
+                            <button id="add-save-time-btn" class="btn-secondary">添加时间点</button>
+                        </div>
+                    </div>
+                    <span class="desc">在指定时间点自动保存作业</span>
+                </div>
+            </div>
+
+            <!-- 天气设置 -->
+            <div class="config-section">
+                <h2>天气设置</h2>
+                <div class="config-item config-item-inline">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="weather-enable"> 启用天气显示
+                    </label>
+                </div>
+                <div class="config-item weather-dependent" data-depends="weather-enable">
+                    <label for="weather-url">天气数据URL</label>
+                    <input type="text" id="weather-url" placeholder="https://...">
+                    <span class="desc">获取天气信息的网页地址</span>
+                </div>
+                <div class="config-item weather-dependent" data-depends="weather-enable">
+                    <label for="weather-refresh-gap">天气刷新间隔（分钟）</label>
+                    <input type="number" id="weather-refresh-gap" step="1" min="1" max="120">
+                    <span class="desc">自动刷新天气的间隔时间</span>
+                </div>
+                <div class="config-item weather-dependent" data-depends="weather-enable">
+                    <label for="weather-forecast-days">天气预报天数</label>
+                    <input type="number" id="weather-forecast-days" step="1" min="1" max="7">
+                    <span class="desc">显示未来几天的天气预报</span>
+                </div>
+                <div class="config-item weather-dependent" data-depends="weather-enable">
+                    <label for="weather-forecast-hours">小时预报小时数</label>
+                    <input type="number" id="weather-forecast-hours" step="1" min="1" max="24">
+                    <span class="desc">显示未来几小时的逐时预报</span>
+                </div>
+                <div class="config-item weather-dependent" data-depends="weather-enable">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="weather-skip-midnight"> 跳过午夜时段小时预报
+                    </label>
+                    <span class="desc">过滤掉深夜到凌晨的小时预报</span>
+                </div>
+                <div class="config-item weather-dependent" data-depends="weather-enable">
+                    <label for="weather-open-browser-url">天气详情链接（可选）</label>
+                    <input type="text" id="weather-open-browser-url" placeholder="留空则使用天气数据URL">
+                    <span class="desc">点击详情按钮时打开的网页地址</span>
+                </div>
+            </div>
+
+            <!-- 图片设置 -->
+            <div class="config-section">
+                <h2>图片设置</h2>
+                <div class="config-item config-item-inline">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="image-enable"> 启用图片显示
+                    </label>
+                </div>
+                <!-- <div class="config-item image-dependent" data-depends="image-enable">
+                    <label for="image-columns">图片列数</label>
+                    <input type="number" id="image-columns" step="1" min="1" max="6">
+                    <span class="desc">图片网格显示的列数，1-6</span>
+                </div>
+                <div class="config-item image-dependent" data-depends="image-enable">
+                    <label for="image-max-height">图片最大高度（像素）</label>
+                    <input type="number" id="image-max-height" step="50" min="100" max="800">
+                    <span class="desc">限制图片显示的最大高度</span>
+                </div>
+                <div class="config-item config-item-full image-dependent" data-depends="image-enable">
+                    <label>图片列表</label>
+                    <div class="images-editor">
+                        <div class="images-list" id="images-list"></div>
+                        <div class="images-actions">
+                            <button id="add-image-btn" class="btn-secondary">添加图片</button>
+                            <button id="clear-images-btn" class="btn-danger">清空所有图片</button>
+                        </div>
+                    </div>
+                    <span class="desc">支持jpg、jpeg、png、gif、bmp格式</span>
+                </div> -->
+            </div>
+
+            <!-- 其他设置 -->
+            <div class="config-section">
+                <h2>其他设置</h2>
+                <div class="config-item config-item-inline">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="check-version"> 启动时检查更新
+                    </label>
+                </div>
+                <div class="config-item config-item-inline">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="always-fill"> 总是填充上次保存的内容
+                    </label>
+                    <span class="desc">每次启动总是自动填入上次的内容，若为否，仅在上次保存为今天时自动填充</span>
+                </div>
+                <div class="config-item config-item-inline">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="debug-mode"> 调试模式
+                    </label>
+                    <span class="desc">开启开发者工具，用于调试</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-footer">
+            <button id="cancel-btn" class="btn-secondary">取消</button>
+            <button id="save-btn" class="btn-primary">保存并重启</button>
+        </div>
+    </div>
+
+    <script src="./render.js"></script>
+</body>
+</html>
