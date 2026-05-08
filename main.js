@@ -8,6 +8,7 @@ import pkg from 'sqlite3';
 import Config from './modules/config.js';
 import checkForUpdates from './modules/update_checker.js';
 import getWeatherData from './modules/weather.js';
+import * as networkTime from './modules/network_time.js';
 
 const { verbose } = pkg;
 const sqlite3 = verbose();
@@ -90,7 +91,7 @@ if (!gotTheLock) {
             ipcMain.once("saveTmpRes", (event, res) => {
               console.log(res);
               store.set('contentTemp', res);
-              store.set('tmpTime', new Date().toISOString());
+              store.set('tmpTime', networkTime.getNetworkDate().toISOString());
               mainWindow.webContents.send('message', "保存成功。");
               mainWindow.webContents.send('set-render-unsaved', false);
               unsaved = false;
@@ -125,7 +126,7 @@ if (!gotTheLock) {
                   const formattedContent = formatContent(res);
                   dialog.showSaveDialog(mainWindow, {
                     title: '保存作业清单',
-                    defaultPath: `${config.caption}_${new Date().toISOString().slice(0, 10)}.txt`,
+                    defaultPath: `${config.caption}_${networkTime.getNetworkDate().toISOString().slice(0, 10)}.txt`,
                     filters: [
                       { name: 'Text Files', extensions: ['txt'] },
                       { name: 'All Files', extensions: ['*'] }
@@ -294,7 +295,7 @@ if (!gotTheLock) {
 
   function setupDailyTimer(targetMinute, callback) {
     const checkTime = () => {
-      const now = new Date();
+      const now = networkTime.getNetworkDate();
       if (now.getHours() * 60 + now.getMinutes() === targetMinute) {
         callback();
       }
@@ -373,7 +374,7 @@ if (!gotTheLock) {
       } else {
         let tmpTime = store.get('tmpTime');
         if (tmpTime) {
-          let now = new Date();
+          let now = networkTime.getNetworkDate();
           let tmpDate = new Date(tmpTime);
           if (now.getFullYear() === tmpDate.getFullYear() && now.getMonth() === tmpDate.getMonth() && now.getDate() === tmpDate.getDate()) {
             mainWindow.webContents.send('contentTmp', contentTemp);
@@ -427,7 +428,7 @@ if (!gotTheLock) {
         ipcMain.once("saveTmpRes", (event, res) => {
           console.log(res);
           store.set('contentTemp', res);
-          store.set('tmpTime', new Date().toISOString());
+          store.set('tmpTime', networkTime.getNetworkDate().toISOString());
           mainWindow.webContents.send('message', "自动保存成功。");
           mainWindow.webContents.send('set-render-unsaved', false);
           unsaved = false;
@@ -438,6 +439,28 @@ if (!gotTheLock) {
       // 检查更新
       if (config.checkVersion) {
         checkForUpdates(mainWindow);
+      }
+
+      // 初始化网络时间（如果启用）
+      if (config.networkTimeEnable && config.networkTimeURL) {
+        networkTime.fetchTimeOffset(config.networkTimeURL).then(offset => {
+          if (offset !== null) {
+            mainWindow.webContents.send('network-time-offset', offset);
+            console.log(`Network time initialized with offset: ${offset}ms`);
+          }
+        });
+      }
+
+      // 定时刷新网络时间
+      if (config.networkTimeEnable && config.networkTimeURL) {
+        const refreshInterval = (config.networkTimeRefreshInterval || 30) * 60 * 1000;
+        setInterval(() => {
+          networkTime.fetchTimeOffset(config.networkTimeURL).then(offset => {
+            if (offset !== null) {
+              mainWindow.webContents.send('network-time-offset', offset);
+            }
+          });
+        }, refreshInterval);
       }
 
       if (config.weatherEnable) {
@@ -471,7 +494,7 @@ if (!gotTheLock) {
       ipcMain.once("saveTmpRes", (event, res) => {
         console.log(res);
         store.set('contentTemp', res);
-        store.set('tmpTime', new Date().toISOString());
+        store.set('tmpTime', networkTime.getNetworkDate().toISOString());
         store.set('config', config);
         app.quit();
       });

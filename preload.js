@@ -37,4 +37,7 @@ contextBridge.exposeInMainWorld("api", {
     saveConfigAndRestart: (config) => { ipcRenderer.send("save-config-and-restart", config) },
     closeConfigWindow: () => { ipcRenderer.send("close-config-window") },
     openConfigWindow: () => { ipcRenderer.send("open-config-window") },
+
+    // 网络时间相关API
+    onNetworkTimeOffset: (callback) => { ipcRenderer.on("network-time-offset", (_event, offset) => { callback(offset) }) },
 })

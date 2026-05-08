@@ -33,6 +33,9 @@ class Config {
                 weatherAutoRefreshGap: 1,
                 checkVersion: 1,
                 alwaysFill: 1,
+                networkTimeEnable: 1,
+                networkTimeURL: 1,
+                networkTimeRefreshInterval: 1,
             },
             subjects: ["语文", "数学", "英语", "物理", "化学", "生物", "政治", "历史", "地理", "信息", "通用"],
             title: "HomeworkBoard",
@@ -56,6 +59,9 @@ class Config {
             weatherAutoRefreshGap: 5,
             checkVersion: true,
             alwaysFill: false,             // 是否总是填充作业内容，默认为false
+            networkTimeEnable: false,      // 是否启用网络时间同步
+            networkTimeURL: 'https://www.baidu.com/',  // 时间服务器URL
+            networkTimeRefreshInterval: 30, // 网络时间刷新间隔（分钟）
         };
         let config = store.get('config');
         if (!config) {

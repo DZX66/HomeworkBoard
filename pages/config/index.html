@@ -145,6 +145,27 @@
                 </div> -->
             </div>
 
+            <!-- 网络时间设置 -->
+            <div class="config-section">
+                <h2>网络时间设置</h2>
+                <div class="config-item config-item-inline">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="network-time-enable"> 启用网络时间
+                    </label>
+                    <span class="desc">通过网络获取准确时间，而非使用本地系统时间</span>
+                </div>
+                <div class="config-item network-time-dependent" data-depends="network-time-enable">
+                    <label for="network-time-url">时间服务器URL</label>
+                    <input type="text" id="network-time-url" placeholder="http://...">
+                    <span class="desc">用于获取网络时间的HTTP服务器地址</span>
+                </div>
+                <div class="config-item network-time-dependent" data-depends="network-time-enable">
+                    <label for="network-time-refresh-interval">刷新间隔（分钟）</label>
+                    <input type="number" id="network-time-refresh-interval" step="1" min="1" max="120">
+                    <span class="desc">每隔多少分钟重新同步一次网络时间</span>
+                </div>
+            </div>
+
             <!-- 其他设置 -->
             <div class="config-section">
                 <h2>其他设置</h2>

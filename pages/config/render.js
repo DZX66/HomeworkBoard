@@ -11,6 +11,9 @@ const weatherForecastHoursInput = document.getElementById('weather-forecast-hour
 const weatherSkipMidnightCheckbox = document.getElementById('weather-skip-midnight');
 const weatherOpenBrowserUrlInput = document.getElementById('weather-open-browser-url');
 const imageEnableCheckbox = document.getElementById('image-enable');
+const networkTimeEnableCheckbox = document.getElementById('network-time-enable');
+const networkTimeUrlInput = document.getElementById('network-time-url');
+const networkTimeRefreshIntervalInput = document.getElementById('network-time-refresh-interval');
 // 这些元素在 HTML 中被注释掉了，需要先检查是否存在
 const imageColumnsInput = document.getElementById('image-columns');
 const imageMaxHeightInput = document.getElementById('image-max-height');
@@ -45,6 +48,7 @@ let imagePaths = [];
 function setupDependencies() {
     const weatherDependents = document.querySelectorAll('.weather-dependent');
     const imageDependents = document.querySelectorAll('.image-dependent');
+    const networkTimeDependents = document.querySelectorAll('.network-time-dependent');
     
     function updateWeatherDependents() {
         const enabled = weatherEnableCheckbox && weatherEnableCheckbox.checked;
@@ -68,15 +72,30 @@ function setupDependencies() {
         });
     }
     
+    function updateNetworkTimeDependents() {
+        const enabled = networkTimeEnableCheckbox && networkTimeEnableCheckbox.checked;
+        networkTimeDependents.forEach(el => {
+            if (enabled) {
+                el.classList.remove('disabled');
+            } else {
+                el.classList.add('disabled');
+            }
+        });
+    }
+    
     if (weatherEnableCheckbox) {
         weatherEnableCheckbox.addEventListener('change', updateWeatherDependents);
     }
     if (imageEnableCheckbox) {
         imageEnableCheckbox.addEventListener('change', updateImageDependents);
     }
+    if (networkTimeEnableCheckbox) {
+        networkTimeEnableCheckbox.addEventListener('change', updateNetworkTimeDependents);
+    }
     
     updateWeatherDependents();
     updateImageDependents();
+    updateNetworkTimeDependents();
 }
 
 // 渲染学科列表
@@ -274,10 +293,10 @@ function clearImages() {
 function escapeHtml(str) {
     if (!str) return '';
     return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"')
         .replace(/'/g, '&#39;');
 }
 
@@ -310,6 +329,10 @@ function loadConfig(config) {
     imagePaths = config.imagePaths ? [...config.imagePaths] : [];
     renderImages();
     
+    if (networkTimeEnableCheckbox) networkTimeEnableCheckbox.checked = config.networkTimeEnable === true;
+    if (networkTimeUrlInput) networkTimeUrlInput.value = config.networkTimeURL || '';
+    if (networkTimeRefreshIntervalInput) networkTimeRefreshIntervalInput.value = config.networkTimeRefreshInterval || 30;
+    
     if (checkVersionCheckbox) checkVersionCheckbox.checked = config.checkVersion !== false;
     if (alwaysFillCheckbox) alwaysFillCheckbox.checked = config.alwaysFill === true;
     if (debugModeCheckbox) debugModeCheckbox.checked = config.debug === true;
@@ -337,6 +360,9 @@ function collectConfig() {
         imageColumns: parseInt(imageColumnsInput ? imageColumnsInput.value : 3) || 3,
         imageMaxHeight: parseInt(imageMaxHeightInput ? imageMaxHeightInput.value : 400) || 400,
         imagePaths: imagePaths,
+        networkTimeEnable: networkTimeEnableCheckbox ? networkTimeEnableCheckbox.checked : false,
+        networkTimeURL: networkTimeUrlInput ? networkTimeUrlInput.value.trim() : '',
+        networkTimeRefreshInterval: parseInt(networkTimeRefreshIntervalInput ? networkTimeRefreshIntervalInput.value : 30) || 30,
         checkVersion: checkVersionCheckbox ? checkVersionCheckbox.checked : false,
         alwaysFill: alwaysFillCheckbox ? alwaysFillCheckbox.checked : false,
         debug: debugModeCheckbox ? debugModeCheckbox.checked : false

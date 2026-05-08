@@ -13,6 +13,25 @@ let unsaved = false;
 let weatherData = null;
 let weatherCard = null;
 let hasReceivedWeatherData = false;
+let networkTimeOffset = 0;
+
+/**
+ * 获取网络时间（使用从主进程接收的偏移量）
+ * @returns {Date}
+ */
+function getNetworkDate() {
+    return new Date(Date.now() + networkTimeOffset);
+}
+
+// 接收网络时间偏移量
+api.onNetworkTimeOffset((offset) => {
+    networkTimeOffset = offset;
+    console.log(`Network time offset received: ${offset}ms`);
+
+    // 立即更新界面上显示的时间
+    const now = getNetworkDate();
+    document.getElementById('time').innerHTML = "今天是" + (now.getMonth() + 1) + "月" + now.getDate() + "日 ";
+});
 
 function setUnsaved(value) {
     unsaved = value;
@@ -626,7 +645,7 @@ document.getElementById('zoom-out').addEventListener('click', () => {
 })
 
 api.message((message) => {
-    let time = new Date();
+    let time = getNetworkDate();
     let msg = "[" + time.getHours() + ":" + (time.getMinutes() < 10 ? "0" : "") + time.getMinutes() + "]" + message;
     document.getElementById('message').textContent = msg;
     msgHistory.push(msg);
@@ -645,8 +664,8 @@ window.addEventListener('load', () => {
     document.getElementById('container').classList.remove('hidden');
 });
 
-// 显示当前时间
-var time = new Date();
+// 显示当前时间（使用网络时间或本地时间作为fallback）
+var time = getNetworkDate();
 document.getElementById('time').innerHTML = "今天是" + (time.getMonth() + 1) + "月" + time.getDate() + "日 ";
 
 function openCaptionEdit() {
@@ -963,7 +982,7 @@ function renderWeatherCard(data) {
     const forecastDays = config.weatherForecastDays || 3;
     const skipMidnight = config.weatherSkipMidnightHours !== false;
 
-    // 处理小时预报 - 修复分隔线逻辑
+    // 处理小时预报
     let filteredHours = [];
     let skippedCount = 0;
 
@@ -971,8 +990,8 @@ function renderWeatherCard(data) {
         // 按时间排序
         const sorted = [...hourlyForecast].sort((a, b) => parseInt(a.hour) - parseInt(b.hour));
 
-        // 获取当前时间
-        const now = new Date();
+        // 获取当前时间（使用网络时间）
+        const now = getNetworkDate();
         const currentHour = now.getHours();
 
         // 第一步：过滤出从当前时间开始的未来小时
@@ -1001,12 +1020,12 @@ function renderWeatherCard(data) {
         let tempHours = [];
         let lastWasSkipped = false;
         let insertDividerBeforeNext = false;
-        
+
         for (let i = 0; i < futureHours.length && tempHours.length < forecastHours; i++) {
             const item = futureHours[i];
             const itemHour = item.hourNum;
             const isMidnight = (itemHour >= 23 || itemHour <= 5);
-            
+
             if (skipMidnight && isMidnight) {
                 skippedCount++;
                 // 如果之前有未跳过的时段，标记需要在下一个未跳过的时段前插入分隔线
@@ -1016,7 +1035,7 @@ function renderWeatherCard(data) {
                 lastWasSkipped = true;
                 continue;
             }
-            
+
             // 如果不是夜间时段
             if (insertDividerBeforeNext) {
                 // 为这个时段标记需要前面插入分隔线
@@ -1037,14 +1056,14 @@ function renderWeatherCard(data) {
             }
             lastWasSkipped = false;
         }
-        
+
         filteredHours = tempHours;
     }
 
     // 处理天数预报
     let filteredDays = [];
     if (dailyForecast && dailyForecast.length > 0) {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = getNetworkDate().toISOString().slice(0, 10);
         const sortedDays = [...dailyForecast].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
         let foundToday = false;
@@ -1094,10 +1113,10 @@ function renderWeatherCard(data) {
                 (item.precipitation && item.precipitation !== '0.0' ? '--' : '0');
             const weather = item.weather || '';
             const itemHour = item.hourNum;
-            
+
             // 根据标记决定是否显示分隔线
             const dividerHtml = item.showDividerBefore ? `<div class="hourly-divider"></div>` : '';
-            
+
             return `
                             ${dividerHtml}
                             <div class="hourly-item">
@@ -1151,7 +1170,7 @@ function renderWeatherCard(data) {
     const updateTimeStr = updateTime ? formatTime(updateTime) : '未知';
     const locationName = position && position.city ? position.city : '';
 
-    const now = new Date();
+    const now = getNetworkDate();
     const currentHour = now.getHours();
     const isNightNow = currentHour >= 20 || currentHour <= 5;
 
