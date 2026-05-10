@@ -3,11 +3,13 @@
 }
 
 body {
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
     min-height: 100vh;
     margin: 0;
-    padding: 0.2rem;
+    padding: 0;
     font-size: 18px;
     background: #baf4cc;
     user-select: none;
@@ -33,7 +35,7 @@ body {
 /* 左侧面板（粘滞） */
 .left-panel {
     position: sticky;
-    top: 2rem;
+    top: 0;
     align-self: start;
     display: flex;
     flex-direction: column;

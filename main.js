@@ -366,7 +366,18 @@ if (!gotTheLock) {
     });
     mainWindow.maximize();
     mainWindow.once('maximize', () => { mainWindow.show() });
-    mainWindow.once('ready-to-show', () => {
+    mainWindow.once('ready-to-show', async () => {
+      // 等待网络时间初始化完成（如果启用）
+      if (config.networkTimeEnable && config.networkTimeURL) {
+        const offset = await networkTime.fetchTimeOffset(config.networkTimeURL);
+        if (offset !== null) {
+          mainWindow.webContents.send('network-time-offset', offset);
+          console.log(`Network time initialized with offset: ${offset}ms`);
+        } else {
+          console.warn('Network time fetch failed, using local time');
+        }
+      }
+
       mainWindow.webContents.send('config', config);
 
       if (config.alwaysFill) {
@@ -439,16 +450,6 @@ if (!gotTheLock) {
       // 检查更新
       if (config.checkVersion) {
         checkForUpdates(mainWindow);
-      }
-
-      // 初始化网络时间（如果启用）
-      if (config.networkTimeEnable && config.networkTimeURL) {
-        networkTime.fetchTimeOffset(config.networkTimeURL).then(offset => {
-          if (offset !== null) {
-            mainWindow.webContents.send('network-time-offset', offset);
-            console.log(`Network time initialized with offset: ${offset}ms`);
-          }
-        });
       }
 
       // 定时刷新网络时间
